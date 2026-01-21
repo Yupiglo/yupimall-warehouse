@@ -30,6 +30,7 @@ import axiosInstance from "@/lib/axios";
 import { useCart } from "@/hooks/useCart";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 import ProductDetailsModal from "./ProductDetailsModal";
+import { getImagePath } from "@/helpers/utils/image.utils";
 
 interface Product {
   _id: string;
@@ -217,14 +218,7 @@ export default function ProductsTable({
             )}
             {filteredProducts.map((product) => {
               const status = getStockStatus(product.quantity);
-              const apiUrl = (process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL.trim() !== "")
-                ? process.env.NEXT_PUBLIC_API_URL
-                : "";
-              const imageUrl = product.imgCover
-                ? product.imgCover.startsWith("http")
-                  ? product.imgCover
-                  : `${apiUrl}/${product.imgCover.replace(/^\/?/, '')}`
-                : undefined;
+              const imageUrl = getImagePath(product.imgCover);
 
               return (
                 <TableRow

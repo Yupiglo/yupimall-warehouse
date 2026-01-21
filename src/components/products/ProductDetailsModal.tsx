@@ -37,6 +37,7 @@ import {
 import { useProduct } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
+import { getImagePath } from "@/helpers/utils/image.utils";
 
 interface ProductDetailsModalProps {
     open: boolean;
@@ -111,18 +112,6 @@ const ProductDetailsContent: React.FC<{ productId: string; onClose: () => void }
         );
     }
 
-    const apiUrl = (process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL.trim() !== "")
-        ? process.env.NEXT_PUBLIC_API_URL
-        : "";
-    const getImagePath = (path: string | null | undefined): string => {
-        if (!path || path.trim() === "" || path === "/placeholder-product.png") return "/placeholder-product.png";
-        if (path.startsWith('http')) return path;
-
-        const cleanPath = path.replace(/^\//, "");
-        const base = apiUrl.replace(/\/$/, "");
-
-        return `${base}/${cleanPath}`;
-    };
 
     const images = [
         getImagePath(product.imgCover),
