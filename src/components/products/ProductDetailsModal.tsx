@@ -113,7 +113,7 @@ const ProductDetailsContent: React.FC<{ productId: string; onClose: () => void }
 
     const apiUrl = (process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL.trim() !== "")
         ? process.env.NEXT_PUBLIC_API_URL
-        : "http://192.168.1.83:8000";
+        : "https://api.yupimall.net";
     const getImagePath = (path: string | null | undefined): string => {
         if (!path || path.trim() === "" || path === "/placeholder-product.png") return "/placeholder-product.png";
         if (path.startsWith('http')) return path;

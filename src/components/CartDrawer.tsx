@@ -146,7 +146,7 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
                             <Stack spacing={2}>
                                 {cartItems.map((item) => {
                                     const product = item.productId;
-                                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://192.168.1.83:8000";
+                                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.yupimall.net";
                                     const imageUrl = product?.imgCover?.startsWith("http")
                                         ? product.imgCover
                                         : `${apiUrl}/${product?.imgCover?.replace(/^\/?/, "")}`;
