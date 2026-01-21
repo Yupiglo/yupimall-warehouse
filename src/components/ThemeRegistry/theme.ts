@@ -1,17 +1,17 @@
 import { createTheme, PaletteMode } from "@mui/material/styles";
-import { Figtree } from "next/font/google";
 
-declare module "@mui/material/styles" {
+declare module '@mui/material/styles' {
   interface Palette {
-    tertio: Palette["primary"];
+    tertio: Palette['primary'];
   }
   interface PaletteOptions {
-    tertio?: PaletteOptions["primary"];
+    tertio?: PaletteOptions['primary'];
   }
   interface TypeText {
     tertio: string;
   }
 }
+import { Figtree } from "next/font/google";
 
 const figtree = Figtree({
   weight: ["300", "400", "500", "700"],
