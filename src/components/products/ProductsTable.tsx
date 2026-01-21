@@ -219,7 +219,7 @@ export default function ProductsTable({
               const status = getStockStatus(product.quantity);
               const apiUrl = (process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL.trim() !== "")
                 ? process.env.NEXT_PUBLIC_API_URL
-                : "https://api.yupimall.net";
+                : "";
               const imageUrl = product.imgCover
                 ? product.imgCover.startsWith("http")
                   ? product.imgCover

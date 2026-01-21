@@ -105,7 +105,7 @@ export default function ProductDetailPage({
     );
   }
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.yupimall.net";
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
   const coverUrl = product.imgCover
     ? product.imgCover.startsWith("http")
       ? product.imgCover
