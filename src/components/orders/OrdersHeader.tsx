@@ -22,36 +22,10 @@ import { useState } from "react";
 import CreateOrderModal from "./CreateOrderModal";
 import StatsCard from "../common/StatsCard";
 
-const orderStats = [
-  {
-    id: 1,
-    label: "Pending Orders",
-    count: 12,
-    growth: "+2.4%",
-    icon: <PendingIcon />,
-    color: "warning",
-  },
-  {
-    id: 2,
-    label: "Processing",
-    count: 8,
-    growth: "+5.1%",
-    icon: <ProcessingIcon />,
-    color: "info",
-  },
-  {
-    id: 3,
-    label: "Completed",
-    count: 156,
-    growth: "+12.5%",
-    icon: <CompletedIcon />,
-    color: "success",
-  },
-];
-
 const statuses = [
   "All Status",
   "Pending",
+  "Validated",
   "Processing",
   "Shipped",
   "Delivered",
@@ -66,10 +40,53 @@ const timeRanges = [
   "All Time",
 ];
 
-export default function OrdersHeader() {
-  const [selectedStatus, setSelectedStatus] = useState("All Status");
-  const [selectedRange, setSelectedRange] = useState("This Month");
+interface OrdersHeaderProps {
+  searchTerm: string;
+  setSearchTerm: (val: string) => void;
+  statusFilter: string;
+  setStatusFilter: (val: string) => void;
+  dynamicStats: {
+    pending: number;
+    processing: number;
+    completed: number;
+  };
+}
+
+export default function OrdersHeader({
+  searchTerm,
+  setSearchTerm,
+  statusFilter,
+  setStatusFilter,
+  dynamicStats,
+}: OrdersHeaderProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const orderStats = [
+    {
+      id: 1,
+      label: "Pending Orders",
+      count: dynamicStats.pending,
+      growth: "Live",
+      icon: <PendingIcon />,
+      color: "warning",
+    },
+    {
+      id: 2,
+      label: "Processing",
+      count: dynamicStats.processing,
+      growth: "Live",
+      icon: <ProcessingIcon />,
+      color: "info",
+    },
+    {
+      id: 3,
+      label: "Completed",
+      count: dynamicStats.completed,
+      growth: "Live",
+      icon: <CompletedIcon />,
+      color: "success",
+    },
+  ];
 
   return (
     <Box sx={{ mb: 4 }}>
@@ -183,6 +200,8 @@ export default function OrdersHeader() {
           placeholder="Search by Order ID, customer, phone..."
           variant="outlined"
           fullWidth
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
           slotProps={{
             input: {
               startAdornment: (
@@ -205,8 +224,8 @@ export default function OrdersHeader() {
           <TextField
             select
             fullWidth
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
             label="Filter Status"
             sx={{
               "& .MuiOutlinedInput-root": {
@@ -227,8 +246,7 @@ export default function OrdersHeader() {
           <TextField
             select
             fullWidth
-            value={selectedRange}
-            onChange={(e) => setSelectedRange(e.target.value)}
+            defaultValue="All Time"
             label="Reporting Period"
             sx={{
               "& .MuiOutlinedInput-root": {

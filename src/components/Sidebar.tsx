@@ -30,6 +30,7 @@ import {
   Logout as LogoutIcon,
   Input as EntriesIcon,
   Output as ExitsIcon,
+  AssignmentInd as InscriptionsIcon,
 } from "@mui/icons-material";
 
 const navItems = [
@@ -46,6 +47,7 @@ const navItems = [
     icon: <CustomersIcon />,
   },
   { name: "Stockists", href: LinksEnum.stockists, icon: <ManagersIcon /> },
+  { name: "Inscriptions", href: LinksEnum.registrations, icon: <InscriptionsIcon /> },
   {
     name: "Notifications",
     href: LinksEnum.notifications,
@@ -103,29 +105,29 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   transition: "all 0.3s ease",
                   backgroundColor: isActive
                     ? (theme) =>
-                        theme.palette.mode === "light"
-                          ? "rgba(45, 63, 234, 0.08)"
-                          : "rgba(138, 148, 255, 0.15)"
+                      theme.palette.mode === "light"
+                        ? "rgba(45, 63, 234, 0.08)"
+                        : "rgba(138, 148, 255, 0.15)"
                     : "transparent",
                   color: isActive ? "primary.main" : "text.secondary",
                   border: isActive ? "1px solid" : "1px solid transparent",
                   borderColor: isActive ? "primary.main" : "transparent",
                   boxShadow: isActive
                     ? (theme) =>
-                        theme.palette.mode === "light"
-                          ? "0 8px 12px -6px rgba(45, 63, 234, 0.15)"
-                          : "0 8px 12px -6px rgba(0, 0, 0, 0.3)"
+                      theme.palette.mode === "light"
+                        ? "0 8px 12px -6px rgba(45, 63, 234, 0.15)"
+                        : "0 8px 12px -6px rgba(0, 0, 0, 0.3)"
                     : "none",
                   "&:hover": {
                     backgroundColor: isActive
                       ? (theme) =>
-                          theme.palette.mode === "light"
-                            ? "rgba(45, 63, 234, 0.12)"
-                            : "rgba(138, 148, 255, 0.2)"
+                        theme.palette.mode === "light"
+                          ? "rgba(45, 63, 234, 0.12)"
+                          : "rgba(138, 148, 255, 0.2)"
                       : (theme) =>
-                          theme.palette.mode === "light"
-                            ? "rgba(0, 0, 0, 0.02)"
-                            : "rgba(255, 255, 255, 0.02)",
+                        theme.palette.mode === "light"
+                          ? "rgba(0, 0, 0, 0.02)"
+                          : "rgba(255, 255, 255, 0.02)",
                     color: "primary.main",
                     transform: "translateX(6px)",
                     "& .MuiListItemIcon-root": {

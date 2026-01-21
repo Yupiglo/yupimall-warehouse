@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Box, Typography, Breadcrumbs, Stack } from "@mui/material";
 import {
   Home as HomeIcon,
@@ -12,6 +13,11 @@ import ProductsHeader from "@/components/products/ProductsHeader";
 import ProductsTable from "@/components/products/ProductsTable";
 
 export default function ProductsPage() {
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedSubcategory, setSelectedSubcategory] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
       {/* Breadcrumbs Header */}
@@ -75,8 +81,22 @@ export default function ProductsPage() {
       </Box>
 
       <Stack spacing={4}>
-        <ProductsHeader />
-        <ProductsTable />
+        <ProductsHeader
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          selectedSubcategory={selectedSubcategory}
+          setSelectedSubcategory={setSelectedSubcategory}
+          selectedStatus={selectedStatus}
+          setSelectedStatus={setSelectedStatus}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+        />
+        <ProductsTable
+          selectedCategory={selectedCategory}
+          selectedSubcategory={selectedSubcategory}
+          selectedStatus={selectedStatus}
+          searchQuery={searchQuery}
+        />
       </Stack>
     </Box>
   );

@@ -13,6 +13,7 @@ export enum LinksEnum {
   couriers = "/couriers",
   distributors = "/distributors",
   stockists = "/stockists",
+  registrations = "/registrations",
   notifications = "/notifications",
   profile = "/profile",
 }

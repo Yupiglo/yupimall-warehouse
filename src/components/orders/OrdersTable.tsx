@@ -22,14 +22,29 @@ import {
   LocalShipping as ShippingIcon,
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
+import { useContext } from "react";
 import DefaultAvatar from "@/assets/AvatarBig.png";
+import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 
 import { useOrders } from "@/hooks/useOrders";
 import { CircularProgress } from "@mui/material";
 
-export default function OrdersTable() {
-  const { orders, loading } = useOrders();
+interface OrdersTableProps {
+  orders: any[];
+  loading: boolean;
+}
+
+export default function OrdersTable({ orders, loading }: OrdersTableProps) {
   const router = useRouter();
+  const { selectedCurr } = useContext(CurrencyContext);
+
+  const formatPrice = (priceUSD: number) => {
+    const converted = priceUSD * selectedCurr.value;
+    if (selectedCurr.symbol === "FCFA" || selectedCurr.symbol === "₦") {
+      return `${Math.round(converted).toLocaleString()} ${selectedCurr.symbol}`;
+    }
+    return `${selectedCurr.symbol}${converted.toFixed(2)}`;
+  };
 
   if (loading) {
     return (
@@ -210,7 +225,7 @@ export default function OrdersTable() {
               </TableCell>
               <TableCell>
                 <Typography variant="subtitle2" fontWeight="900">
-                  {order.total?.toLocaleString()} CFA
+                  {formatPrice(order.total || 0)}
                 </Typography>
               </TableCell>
               <TableCell>

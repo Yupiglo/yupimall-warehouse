@@ -5,8 +5,9 @@ export default auth((req: NextRequest & { auth: any }) => {
     const isAuthenticated = !!req.auth;
     const isLoginPage = req.nextUrl.pathname.startsWith("/login");
     const isRecoverPage = req.nextUrl.pathname.startsWith("/recover");
+    const isRegisterPage = req.nextUrl.pathname.startsWith("/register");
 
-    if (isLoginPage || isRecoverPage) {
+    if (isLoginPage || isRecoverPage || isRegisterPage) {
         if (isAuthenticated) {
             return NextResponse.redirect(new URL("/dashboard", req.url));
         }
@@ -27,5 +28,5 @@ export default auth((req: NextRequest & { auth: any }) => {
 });
 
 export const config = {
-    matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+    matcher: ["/((?!api|_next/static|_next/image|images|favicon.ico).*)"],
 };

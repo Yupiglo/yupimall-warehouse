@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useState, useContext } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
@@ -13,46 +13,39 @@ import {
   Divider,
   Grid,
   Breadcrumbs,
+  Button,
+  CircularProgress,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import {
   ArrowBack as BackIcon,
   Inventory as ProductIcon,
   AttachMoney as PriceIcon,
   Storage as StockIcon,
-  QrCode as SkuIcon,
   Home as HomeIcon,
   ChevronRight as ChevronRightIcon,
+  AddShoppingCart as AddCartIcon,
+  Add as AddIcon,
+  Remove as RemoveIcon,
+  Star as StarIcon,
 } from "@mui/icons-material";
 import Link from "next/link";
 import { LinksEnum } from "@/utilities/pagesLInksEnum";
+import { useProduct } from "@/hooks/useProducts";
+import { useCart } from "@/hooks/useCart";
+import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 
-const products = [
-  {
-    id: 1,
-    name: "Classic Leather Jacket",
-    category: "Clothing",
-    sku: "JKT-001",
-    price: "$129.99",
-    stock: 45,
-    status: "Active",
-    image:
-      "https://images.unsplash.com/photo-1551028150-64b9f398f678?w=800&h=800&fit=crop",
-    description:
-      "High-quality genuine leather jacket with a classic finish and durable zippers. Designed for style and longevity, this jacket features premium stitching and multiple pockets.",
-  },
-];
+const getStatusColor = (quantity: number) => {
+  if (quantity === 0) return "error";
+  if (quantity < 10) return "warning";
+  return "success";
+};
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "Active":
-      return "success";
-    case "Out of Stock":
-      return "warning";
-    case "Discontinued":
-      return "error";
-    default:
-      return "primary";
-  }
+const getStatusText = (quantity: number) => {
+  if (quantity === 0) return "Rupture";
+  if (quantity < 10) return "Stock Bas";
+  return "En Stock";
 };
 
 export default function ProductDetailPage({
@@ -64,80 +57,117 @@ export default function ProductDetailPage({
   const resolvedParams = use(params);
   const { id } = resolvedParams;
 
-  // Mock finding product by ID
-  const product = products.find((p) => p.id.toString() === id) || products[0];
+  const { product, loading, error } = useProduct(id);
+  const { addToCart, loading: cartLoading } = useCart();
+  const [quantity, setQuantity] = useState(1);
+  const [activeImage, setActiveImage] = useState<string | null>(null);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+  const { selectedCurr } = useContext(CurrencyContext);
+
+  const formatPrice = (priceUSD: number) => {
+    const converted = priceUSD * selectedCurr.value;
+    if (selectedCurr.symbol === "FCFA" || selectedCurr.symbol === "₦") {
+      return `${Math.round(converted).toLocaleString()} ${selectedCurr.symbol}`;
+    }
+    return `${selectedCurr.symbol}${converted.toFixed(2)}`;
+  };
+
+  const handleAddToCart = async () => {
+    if (!product) return;
+    const result = await addToCart(product.id as any, quantity);
+    setSnackbar({
+      open: true,
+      message: result.message,
+      severity: result.success ? "success" : "error",
+    });
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh" }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <Box sx={{ p: 4, textAlign: "center" }}>
+        <Typography color="error">{error || "Produit non trouvé"}</Typography>
+        <Button onClick={() => router.push(LinksEnum.products)} sx={{ mt: 2 }}>
+          Retour aux produits
+        </Button>
+      </Box>
+    );
+  }
+
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://192.168.1.83:8000";
+  const coverUrl = product.imgCover
+    ? product.imgCover.startsWith("http")
+      ? product.imgCover
+      : `${apiUrl}/${product.imgCover.replace(/^\/?/, "")}`
+    : "/placeholder-product.png";
+
+  const allImages = [
+    coverUrl,
+    ...(Array.isArray(product.images)
+      ? product.images.map(img => img.startsWith("http") ? img : `${apiUrl}/${img.replace(/^\/?/, "")}`)
+      : [])
+  ].filter(Boolean);
+
+  const currentImageUrl = activeImage || coverUrl;
+
+  // Parse variants if they are a string
+  let productVariants: any[] = [];
+  try {
+    productVariants = typeof product.variants === 'string' ? JSON.parse(product.variants) : (Array.isArray(product.variants) ? product.variants : []);
+  } catch (e) {
+    console.error("Failed to parse variants", e);
+  }
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
       {/* Breadcrumbs Header */}
       <Box sx={{ mb: 4 }}>
         <Breadcrumbs
-          separator={
-            <ChevronRightIcon
-              sx={{ fontSize: "1rem", color: "text.disabled" }}
-            />
-          }
+          separator={<ChevronRightIcon sx={{ fontSize: "1rem", color: "text.disabled" }} />}
           aria-label="breadcrumb"
           sx={{ mb: 3 }}
         >
-          <Box
-            style={{
-              display: "flex",
-              alignItems: "center",
-              color: "inherit",
-              textDecoration: "none",
-            }}
-          >
-            <HomeIcon
-              sx={{ mr: 0.5, fontSize: "1.2rem", color: "primary.main" }}
-            />
-            <Typography
-              variant="body2"
-              fontWeight="500"
-              sx={{ color: "text.secondary" }}
-            >
+          <Box style={{ display: "flex", alignItems: "center", color: "inherit", textDecoration: "none" }}>
+            <HomeIcon sx={{ mr: 0.5, fontSize: "1.2rem", color: "primary.main" }} />
+            <Typography variant="body2" fontWeight="500" sx={{ color: "text.secondary" }}>
               Home
             </Typography>
           </Box>
-          <Link
-            href={LinksEnum.products}
-            style={{ textDecoration: "none", color: "inherit" }}
-          >
+          <Link href={LinksEnum.products} style={{ textDecoration: "none", color: "inherit" }}>
             <Typography
               variant="body2"
               fontWeight="500"
-              sx={{
-                color: "text.secondary",
-                "&:hover": { color: "primary.main" },
-              }}
+              sx={{ color: "text.secondary", "&:hover": { color: "primary.main" } }}
             >
               Products
             </Typography>
           </Link>
           <Stack direction="row" alignItems="center" spacing={0.5}>
             <Typography variant="body2" fontWeight="600" color="text.primary">
-              Product Detail
+              {product.title}
             </Typography>
-            <ProductIcon
-              sx={{ fontSize: "0.9rem", color: "primary.main", mb: 0.1 }}
-            />
+            <ProductIcon sx={{ fontSize: "0.9rem", color: "primary.main", mb: 0.1 }} />
           </Stack>
         </Breadcrumbs>
 
-        <Stack
-          direction="row"
-          spacing={2}
-          alignItems="center"
-          justifyContent="space-between"
-        >
+        <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
           <Stack direction="row" spacing={2} alignItems="center">
             <IconButton
               onClick={() => router.push(LinksEnum.products)}
               sx={{
                 bgcolor: (theme) =>
-                  theme.palette.mode === "light"
-                    ? "common.white"
-                    : "rgba(255,255,255,0.05)",
+                  theme.palette.mode === "light" ? "common.white" : "rgba(255,255,255,0.05)",
                 border: "1px solid",
                 borderColor: "divider",
                 borderRadius: "14px",
@@ -150,7 +180,7 @@ export default function ProductDetailPage({
             </IconButton>
             <Box>
               <Typography
-                variant="h3"
+                variant="h4"
                 fontWeight="900"
                 sx={{
                   background: (theme) =>
@@ -161,14 +191,10 @@ export default function ProductDetailPage({
                   letterSpacing: -1,
                 }}
               >
-                {product.name}
+                {product.title}
               </Typography>
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                fontWeight="600"
-              >
-                Monitoring inventory status for SKU: {product.sku}
+              <Typography variant="body2" color="text.secondary" fontWeight="600">
+                Catégorie: {typeof product.category === "string" ? product.category : (product.category?.name || product.categoryName || "N/A")}
               </Typography>
             </Box>
           </Stack>
@@ -176,343 +202,325 @@ export default function ProductDetailPage({
       </Box>
 
       <Grid container spacing={4}>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Stack spacing={4}>
+        {/* Left Column: Images */}
+        <Grid item xs={12} md={5}>
+          <Stack spacing={2}>
             <Card
               sx={{
                 borderRadius: "32px",
                 background: (theme) =>
-                  theme.palette.mode === "light"
-                    ? "rgba(255, 255, 255, 0.7)"
-                    : "rgba(30, 30, 30, 0.6)",
+                  theme.palette.mode === "light" ? "rgba(255, 255, 255, 0.7)" : "rgba(30, 30, 30, 0.6)",
                 backdropFilter: "blur(12px)",
                 border: "1px solid",
                 borderColor: (theme) =>
-                  theme.palette.mode === "light"
-                    ? "rgba(255, 255, 255, 0.4)"
-                    : "rgba(255, 255, 255, 0.1)",
+                  theme.palette.mode === "light" ? "rgba(255, 255, 255, 0.4)" : "rgba(255, 255, 255, 0.1)",
                 overflow: "hidden",
                 boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                minHeight: { xs: 300, md: 500 }
               }}
             >
               <Box
                 component="img"
-                src={product.image}
-                sx={{
-                  width: "100%",
-                  height: 350,
-                  objectFit: "cover",
-                }}
+                src={currentImageUrl}
+                alt={product.title}
+                sx={{ maxWidth: "100%", maxHeight: 500, objectFit: "contain", p: 2 }}
               />
-              <CardContent sx={{ p: 4, textAlign: "center" }}>
-                <Typography variant="h5" fontWeight="900" gutterBottom>
-                  {product.name}
-                </Typography>
-                <Chip
-                  label={product.status}
-                  size="small"
-                  sx={{
-                    fontWeight: "800",
-                    fontSize: "0.75rem",
-                    borderRadius: "8px",
-                    textTransform: "uppercase",
-                    letterSpacing: 1,
-                    px: 1,
-                    bgcolor: (theme) =>
-                      theme.palette.mode === "light"
-                        ? "common.white"
-                        : "rgba(255, 255, 255, 0.05)",
-                    color: `${getStatusColor(product.status)}.main`,
-                    border: "1px solid",
-                    borderColor: `${getStatusColor(product.status)}.main`,
-                  }}
-                />
-              </CardContent>
             </Card>
 
+            {/* Gallery Thumbnails */}
+            {allImages.length > 1 && (
+              <Stack direction="row" spacing={2} sx={{ overflowX: "auto", pb: 1, px: 0.5 }}>
+                {allImages.map((img, i) => (
+                  <Box
+                    key={i}
+                    component="img"
+                    src={img}
+                    onClick={() => setActiveImage(img)}
+                    sx={{
+                      width: 80,
+                      height: 80,
+                      borderRadius: "16px",
+                      objectFit: "cover",
+                      cursor: "pointer",
+                      border: "2px solid",
+                      borderColor: currentImageUrl === img ? "primary.main" : "transparent",
+                      transition: "0.2s",
+                      "&:hover": { transform: "scale(1.05)", borderColor: "primary.light" }
+                    }}
+                  />
+                ))}
+              </Stack>
+            )}
+          </Stack>
+        </Grid>
+
+        {/* Right Column: Details */}
+        <Grid item xs={12} md={7}>
+          <Stack spacing={3}>
             <Card
               sx={{
                 borderRadius: "24px",
                 background: (theme) =>
-                  theme.palette.mode === "light"
-                    ? "rgba(255, 255, 255, 0.7)"
-                    : "rgba(30, 30, 30, 0.6)",
+                  theme.palette.mode === "light" ? "rgba(255, 255, 255, 0.7)" : "rgba(30, 30, 30, 0.6)",
                 backdropFilter: "blur(12px)",
                 border: "1px solid",
                 borderColor: (theme) =>
-                  theme.palette.mode === "light"
-                    ? "rgba(255, 255, 255, 0.4)"
-                    : "rgba(255, 255, 255, 0.1)",
+                  theme.palette.mode === "light" ? "rgba(255, 255, 255, 0.4)" : "rgba(255, 255, 255, 0.1)",
               }}
             >
-              <CardContent sx={{ p: 3 }}>
-                <Typography
-                  variant="subtitle1"
-                  fontWeight="800"
-                  sx={{ mb: 3, display: "flex", alignItems: "center", gap: 1 }}
-                >
-                  <Box
+              <CardContent sx={{ p: 4 }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
+                  <Box>
+                    <Typography variant="h3" fontWeight="900" gutterBottom sx={{ fontSize: { xs: '1.5rem', md: '2.5rem' } }}>
+                      {product.title}
+                    </Typography>
+                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                      <Chip
+                        label={getStatusText(product.quantity)}
+                        size="small"
+                        sx={{
+                          fontWeight: "800",
+                          borderRadius: "8px",
+                          bgcolor: `${getStatusColor(product.quantity)}.main`,
+                          color: "white",
+                        }}
+                      />
+                      {product.pv !== undefined && (
+                        <Chip
+                          label={`${product.pv} PV`}
+                          size="small"
+                          color="secondary"
+                          sx={{ fontWeight: "800", borderRadius: "8px" }}
+                        />
+                      )}
+                      <Stack direction="row" spacing={0.5} alignItems="center" sx={{ ml: 1 }}>
+                        <StarIcon sx={{ color: "#FFB400", fontSize: "1.2rem" }} />
+                        <Typography variant="body2" fontWeight="bold">
+                          {product.ratingsAverage || 0} ({product.ratingsQuantity || 0} avis)
+                        </Typography>
+                      </Stack>
+                    </Stack>
+                  </Box>
+                  <Box sx={{ textAlign: "right", minWidth: 150 }}>
+                    <Typography variant="h4" fontWeight="900" color="primary.main" sx={{ fontSize: { xs: '1.2rem', md: '2rem' } }}>
+                      {formatPrice(product.priceAfterDiscount || product.price)}
+                    </Typography>
+                    {product.priceAfterDiscount && product.priceAfterDiscount < product.price && (
+                      <Typography variant="body2" color="text.secondary" sx={{ textDecoration: "line-through" }}>
+                        {formatPrice(product.price)}
+                      </Typography>
+                    )}
+                  </Box>
+                </Stack>
+
+                <Divider sx={{ my: 3 }} />
+
+                {/* Variants Display */}
+                {productVariants.length > 0 && (
+                  <Box sx={{ mb: 4 }}>
+                    <Typography variant="subtitle1" fontWeight="800" sx={{ mb: 1.5, display: "flex", alignItems: "center", gap: 1 }}>
+                      Options disponibles
+                    </Typography>
+                    <Grid container spacing={2}>
+                      {productVariants.map((v, i) => (
+                        <Grid item key={i} xs={6} sm={4}>
+                          <Box sx={{
+                            p: 1.5,
+                            borderRadius: "16px",
+                            bgcolor: "rgba(0,0,0,0.02)",
+                            border: "1px solid",
+                            borderColor: "divider",
+                            textAlign: 'center'
+                          }}>
+                            <Typography variant="caption" color="text.secondary" display="block" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>{v.key}</Typography>
+                            <Typography variant="body2" fontWeight="bold">{v.value}</Typography>
+                          </Box>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  </Box>
+                )}
+
+                {/* description */}
+                <Typography variant="subtitle1" fontWeight="800" sx={{ mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
+                  Description
+                </Typography>
+                <Typography variant="body1" sx={{ color: "text.secondary", lineHeight: 1.8, mb: 4 }}>
+                  {product.description || "Aucune description disponible pour ce produit."}
+                </Typography>
+
+                {/* Add to Cart Footer */}
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="center">
+                  <Stack direction="row" spacing={2} alignItems="center" sx={{
+                    bgcolor: "action.hover",
+                    borderRadius: "16px",
+                    p: 0.6,
+                    border: "1px solid",
+                    borderColor: "divider"
+                  }}>
+                    <IconButton
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      size="small"
+                      sx={{ bgcolor: 'background.paper', boxShadow: 1 }}
+                    >
+                      <RemoveIcon />
+                    </IconButton>
+                    <Typography fontWeight="bold" sx={{ minWidth: 40, textAlign: "center", fontSize: '1.1rem' }}>
+                      {quantity}
+                    </Typography>
+                    <IconButton
+                      onClick={() => setQuantity(Math.min(product.quantity, quantity + 1))}
+                      size="small"
+                      sx={{ bgcolor: 'background.paper', boxShadow: 1 }}
+                    >
+                      <AddIcon />
+                    </IconButton>
+                  </Stack>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    size="large"
+                    startIcon={<AddCartIcon />}
+                    onClick={handleAddToCart}
+                    disabled={cartLoading || product.quantity === 0}
                     sx={{
-                      p: 1,
-                      borderRadius: "8px",
-                      background: (theme) =>
-                        `linear-gradient(135deg, ${theme.palette.primary.main}15, ${theme.palette.primary.main}25)`,
-                      color: "primary.main",
-                      display: "flex",
+                      borderRadius: "16px",
+                      py: 1.8,
+                      fontWeight: 800,
+                      textTransform: "none",
+                      fontSize: "1.1rem",
+                      boxShadow: (theme) => `0 8px 25px ${theme.palette.primary.main}40`,
+                      background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                      "&:hover": {
+                        transform: "translateY(-2px)",
+                        boxShadow: (theme) => `0 12px 30px ${theme.palette.primary.main}50`,
+                      }
                     }}
                   >
-                    <SkuIcon sx={{ fontSize: 18 }} />
-                  </Box>
-                  Specifications
-                </Typography>
-                <Stack spacing={3}>
-                  <Stack direction="row" spacing={2} alignItems="center">
-                    <Box sx={{ flexGrow: 1 }}>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        fontWeight="700"
-                        sx={{ textTransform: "uppercase", letterSpacing: 1 }}
-                      >
-                        Identifier SKU
-                      </Typography>
-                      <Typography
-                        variant="body1"
-                        sx={{
-                          fontFamily: "monospace",
-                          fontWeight: "800",
-                          color: "primary.main",
-                        }}
-                      >
-                        {product.sku}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                  <Divider />
-                  <Stack direction="row" spacing={2} alignItems="center">
-                    <Box sx={{ flexGrow: 1 }}>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        fontWeight="700"
-                        sx={{ textTransform: "uppercase", letterSpacing: 1 }}
-                      >
-                        Classification
-                      </Typography>
-                      <Typography variant="body1" fontWeight="800">
-                        {product.category}
-                      </Typography>
-                    </Box>
-                    <Chip
-                      label="Primary"
-                      size="small"
-                      sx={{
-                        borderRadius: "6px",
-                        fontWeight: "800",
-                        fontSize: "0.6rem",
-                      }}
-                    />
-                  </Stack>
+                    {cartLoading ? "Ajout en cours..." : "Ajouter au panier"}
+                  </Button>
                 </Stack>
               </CardContent>
             </Card>
-          </Stack>
-        </Grid>
 
-        <Grid size={{ xs: 12, md: 8 }}>
-          <Grid container spacing={3}>
-            {[
-              {
-                label: "Unit Price",
-                value: product.price,
-                icon: <PriceIcon />,
-                color: "success.main",
-                bgcolor: "success.lighter",
-              },
-              {
-                label: "Current Stock",
-                value: product.stock,
-                icon: <StockIcon />,
-                color: "primary.main",
-                bgcolor: "primary.lighter",
-              },
-              {
-                label: "Stock Value",
-                value: `$${(
-                  parseFloat(product.price.replace("$", "")) * product.stock
-                ).toFixed(2)}`,
-                icon: <SpentIcon />,
-                color: "info.main",
-                bgcolor: "info.lighter",
-              },
-            ].map((stat, idx) => (
-              <Grid key={idx} size={{ xs: 12, sm: 4 }}>
-                <Card
-                  sx={{
-                    borderRadius: "20px",
-                    background: (theme) =>
-                      theme.palette.mode === "light"
-                        ? "rgba(255, 255, 255, 0.7)"
-                        : "rgba(30, 30, 30, 0.6)",
-                    backdropFilter: "blur(12px)",
-                    border: "1px solid",
-                    borderColor: (theme) =>
-                      theme.palette.mode === "light"
-                        ? "rgba(255, 255, 255, 0.4)"
-                        : "rgba(255, 255, 255, 0.1)",
-                    transition: "transform 0.2s",
-                    "&:hover": { transform: "translateY(-4px)" },
-                  }}
-                >
-                  <CardContent sx={{ p: 3 }}>
-                    <Stack direction="row" spacing={2} alignItems="center">
-                      <Box
-                        sx={{
-                          p: 1.2,
-                          background: (theme) => {
-                            const baseColor =
-                              (
-                                theme.palette[
-                                  stat.color.split(
-                                    "."
-                                  )[0] as keyof typeof theme.palette
-                                ] as any
-                              )?.main || theme.palette.primary.main;
-                            return `linear-gradient(135deg, ${baseColor}15, ${baseColor}25)`;
-                          },
-                          color: stat.color,
-                          borderRadius: "12px",
-                          display: "flex",
-                        }}
-                      >
-                        {stat.icon}
-                      </Box>
-                      <Box>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          fontWeight="700"
-                          sx={{ textTransform: "uppercase", letterSpacing: 1 }}
-                        >
-                          {stat.label}
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Card sx={{ borderRadius: "24px" }}>
+                  <CardContent sx={{ p: 4 }}>
+                    {/* benefits */}
+                    {Array.isArray(product.benefits) && product.benefits.length > 0 && (
+                      <Box sx={{ mb: 4 }}>
+                        <Typography variant="h6" fontWeight="800" sx={{ mb: 2, display: "flex", alignItems: "center", gap: 1 }}>
+                          <Box sx={{ width: 4, height: 24, bgcolor: "success.main", borderRadius: "2px" }} />
+                          Bénéfices
                         </Typography>
-                        <Typography
-                          variant="h5"
-                          fontWeight="900"
-                          color="text.primary"
-                        >
-                          {stat.value}
-                        </Typography>
+                        <Grid container spacing={2}>
+                          {product.benefits.map((benefit: string, i: number) => (
+                            <Grid item key={i} xs={12} sm={6}>
+                              <Stack direction="row" spacing={1.5} alignItems="flex-start">
+                                <Box sx={{ mt: 0.5, width: 8, height: 8, borderRadius: "50%", bgcolor: "success.main", flexShrink: 0 }} />
+                                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>{benefit}</Typography>
+                              </Stack>
+                            </Grid>
+                          ))}
+                        </Grid>
                       </Box>
-                    </Stack>
+                    )}
+
+                    {/* ingredients */}
+                    {Array.isArray(product.ingredients) && product.ingredients.length > 0 && (
+                      <Box sx={{ mb: 4 }}>
+                        <Typography variant="h6" fontWeight="800" sx={{ mb: 2, display: "flex", alignItems: "center", gap: 1 }}>
+                          <Box sx={{ width: 4, height: 24, bgcolor: "secondary.main", borderRadius: "2px" }} />
+                          Ingrédients clés
+                        </Typography>
+                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                          {product.ingredients.map((ing: string, i: number) => (
+                            <Chip
+                              key={i}
+                              label={ing}
+                              size="medium"
+                              variant="outlined"
+                              sx={{
+                                borderRadius: "10px",
+                                fontWeight: 600,
+                                px: 1,
+                                borderColor: 'secondary.light',
+                                bgcolor: 'secondary.main' + '05'
+                              }}
+                            />
+                          ))}
+                        </Stack>
+                      </Box>
+                    )}
+
+                    {/* usage & research */}
+                    <Grid container spacing={4}>
+                      {product.howToUse && (
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="h6" fontWeight="800" sx={{ mb: 2, display: "flex", alignItems: "center", gap: 1 }}>
+                            <Box sx={{ width: 4, height: 24, bgcolor: "info.main", borderRadius: "2px" }} />
+                            Conseils d'utilisation
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "pre-line", lineHeight: 1.6, fontWeight: 500 }}>
+                            {product.howToUse}
+                          </Typography>
+                        </Grid>
+                      )}
+                      {product.clinicalResearch && (
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="h6" fontWeight="800" sx={{ mb: 2, display: "flex", alignItems: "center", gap: 1 }}>
+                            <Box sx={{ width: 4, height: 24, bgcolor: "warning.main", borderRadius: "2px" }} />
+                            Recherche Clinique
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6, fontWeight: 500 }}>
+                            {product.clinicalResearch}
+                          </Typography>
+                        </Grid>
+                      )}
+                    </Grid>
+
+                    <Divider sx={{ my: 4 }} />
+
+                    <Grid container spacing={3}>
+                      <Grid item xs={6} sm={3}>
+                        <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>Marque</Typography>
+                        <Typography variant="body2" fontWeight="800">{typeof product.brand === "string" ? product.brand : (product.brand?.name || "N/A")}</Typography>
+                      </Grid>
+                      <Grid item xs={6} sm={3}>
+                        <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>Vendus</Typography>
+                        <Typography variant="body2" fontWeight="800">{product.sold || 0} unités</Typography>
+                      </Grid>
+                      <Grid item xs={6} sm={3}>
+                        <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>Disponibilité</Typography>
+                        <Typography variant="body2" fontWeight="800">{product.quantity} en stock</Typography>
+                      </Grid>
+                      <Grid item xs={6} sm={3}>
+                        <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>SKU</Typography>
+                        <Typography variant="body2" fontWeight="800">#{product.id.toString().slice(-6).toUpperCase()}</Typography>
+                      </Grid>
+                    </Grid>
                   </CardContent>
                 </Card>
               </Grid>
-            ))}
-
-            <Grid size={{ xs: 12 }}>
-              <Card
-                sx={{
-                  borderRadius: "24px",
-                  background: (theme) =>
-                    theme.palette.mode === "light"
-                      ? "rgba(255, 255, 255, 0.7)"
-                      : "rgba(30, 30, 30, 0.6)",
-                  backdropFilter: "blur(12px)",
-                  border: "1px solid",
-                  borderColor: (theme) =>
-                    theme.palette.mode === "light"
-                      ? "rgba(255, 255, 255, 0.4)"
-                      : "rgba(255, 255, 255, 0.1)",
-                }}
-              >
-                <CardContent sx={{ p: 4 }}>
-                  <Typography
-                    variant="h6"
-                    fontWeight="800"
-                    sx={{
-                      mb: 2,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 4,
-                        height: 24,
-                        bgcolor: "primary.main",
-                        borderRadius: "2px",
-                      }}
-                    />
-                    Product Description
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      color: "text.secondary",
-                      lineHeight: 1.8,
-                      fontWeight: 500,
-                    }}
-                  >
-                    {product.description}
-                  </Typography>
-
-                  <Box sx={{ mt: 5, mb: 2 }}>
-                    <Typography
-                      variant="h6"
-                      fontWeight="800"
-                      sx={{
-                        mb: 3,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: 4,
-                          height: 24,
-                          bgcolor: "primary.main",
-                          borderRadius: "2px",
-                        }}
-                      />
-                      Inventory History
-                    </Typography>
-                    <Box
-                      sx={{
-                        p: 4,
-                        textAlign: "center",
-                        bgcolor: (theme) =>
-                          theme.palette.mode === "light"
-                            ? "rgba(0,0,0,0.02)"
-                            : "rgba(255,255,255,0.02)",
-                        borderRadius: "20px",
-                        border: "2px dashed",
-                        borderColor: "divider",
-                      }}
-                    >
-                      <Typography
-                        variant="subtitle1"
-                        fontWeight="700"
-                        color="text.secondary"
-                        sx={{ mb: 1 }}
-                      >
-                        No recent transactions
-                      </Typography>
-                      <Typography variant="body2" color="text.disabled">
-                        Full inventory transaction logs will appear here once
-                        the system is live.
-                      </Typography>
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
             </Grid>
-          </Grid>
+          </Stack>
         </Grid>
       </Grid>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert severity={snackbar.severity} variant="filled" sx={{ borderRadius: "12px" }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
-import { MonetizationOn as SpentIcon } from "@mui/icons-material";

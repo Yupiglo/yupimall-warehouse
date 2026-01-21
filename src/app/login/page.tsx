@@ -261,9 +261,8 @@ export default function LoginPage() {
                 label="Remember me for 30 days"
                 /> */}
               </Box>
-              <Link href="/recover" passHref>
+              <Link href="/recover">
                 <Typography
-                  component="a"
                   variant="body2"
                   color="primary"
                   sx={{ textDecoration: "none", fontWeight: 500 }}
@@ -287,24 +286,24 @@ export default function LoginPage() {
             <Grid container justifyContent="space-between" sx={{ mt: 2 }}>
               <Typography variant="body2" color="text.secondary">
                 Don&apos;t have an account?{" "}
-              </Typography>
-
-              <Typography>
-                <Link href="mailto:support@yupiflow.net" passHref>
-                  <Typography
-                    component="a"
-                    variant="body2"
-                    color="primary"
-                    sx={{
-                      textDecoration: "none",
-                      fontWeight: "bold",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Contact Us
-                  </Typography>
+                <Link href="/register" style={{ color: "var(--mui-palette-primary-main)", textDecoration: "none", fontWeight: "bold" }}>
+                  Sign Up
                 </Link>
               </Typography>
+
+              <Link href="mailto:support@yupiflow.net">
+                <Typography
+                  variant="body2"
+                  color="primary"
+                  sx={{
+                    textDecoration: "none",
+                    fontWeight: "bold",
+                    cursor: "pointer",
+                  }}
+                >
+                  Contact Us
+                </Typography>
+              </Link>
             </Grid>
           </Box>
         </Box>

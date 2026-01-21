@@ -51,23 +51,23 @@ export default function CardStats({
           },
         }}
       >
-        <CardContent>
+        <CardContent sx={{ p: 2 }}>
           <Stack
             direction="row"
             justifyContent="space-between"
             alignItems="flex-start"
-            sx={{ mb: 2 }}
+            sx={{ mb: 1 }}
           >
             <Box>
               <Typography
                 variant="subtitle2"
                 color="text.secondary"
                 fontWeight="bold"
-                sx={{ textTransform: "uppercase", letterSpacing: 1 }}
+                sx={{ textTransform: "uppercase", letterSpacing: 0.5, fontSize: "0.7rem" }}
               >
                 {title}
               </Typography>
-              <Typography variant="h4" fontWeight="bold" sx={{ mt: 1 }}>
+              <Typography variant="h6" fontWeight="bold" sx={{ mt: 0.5 }}>
                 {value}
               </Typography>
             </Box>
@@ -79,8 +79,8 @@ export default function CardStats({
                   const paletteEntry = theme.palette[key];
                   const baseColor =
                     paletteEntry &&
-                    typeof paletteEntry === "object" &&
-                    "main" in paletteEntry
+                      typeof paletteEntry === "object" &&
+                      "main" in paletteEntry
                       ? (paletteEntry as { main: string }).main
                       : theme.palette.primary.main;
                   return `linear-gradient(135deg, ${baseColor}15, ${baseColor}25)`;
@@ -95,8 +95,8 @@ export default function CardStats({
                     ? (paletteEntry as { main: string }).main
                     : theme.palette.primary.main;
                 },
-                width: 48,
-                height: 48,
+                width: 32,
+                height: 32,
                 // boxShadow: "0 4px 12px 0 rgba(0,0,0,0.1)",
               }}
             >
@@ -115,8 +115,8 @@ export default function CardStats({
                       ? "rgba(0, 178, 48, 0.1)"
                       : "rgba(0, 178, 48, 0.2)"
                     : theme.palette.mode === "light"
-                    ? "rgba(253, 83, 83, 0.1)"
-                    : "rgba(253, 83, 83, 0.2)",
+                      ? "rgba(253, 83, 83, 0.1)"
+                      : "rgba(253, 83, 83, 0.2)",
                 px: 1,
                 py: 0.5,
                 borderRadius: 1.5,

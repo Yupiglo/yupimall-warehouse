@@ -15,11 +15,22 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import { LinksEnum } from "@/utilities/pagesLInksEnum";
+import { useContext } from "react";
+import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 interface OrdersTableProps {
   items?: any[];
 }
 
 export default function OrdersTable({ items = [] }: OrdersTableProps) {
+  const { selectedCurr } = useContext(CurrencyContext);
+
+  const formatPrice = (priceUSD: number) => {
+    const converted = priceUSD * selectedCurr.value;
+    if (selectedCurr.symbol === "FCFA" || selectedCurr.symbol === "₦") {
+      return `${Math.round(converted).toLocaleString()} ${selectedCurr.symbol}`;
+    }
+    return `${selectedCurr.symbol}${converted.toFixed(2)}`;
+  };
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case "delivered":
@@ -117,7 +128,7 @@ export default function OrdersTable({ items = [] }: OrdersTableProps) {
                   />
                 </TableCell>
                 <TableCell align="right" sx={{ fontWeight: 700 }}>
-                  {order.total.toLocaleString()} CFA
+                  {formatPrice(order.total || 0)}
                 </TableCell>
               </TableRow>
             ))}

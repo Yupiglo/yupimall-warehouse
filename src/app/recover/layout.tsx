@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import AppShell from "@/components/AppShell";
 
 export const metadata: Metadata = {
   title: "Recover | Yupiflow",
@@ -11,5 +10,5 @@ export default function RecoverLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <AppShell>{children}</AppShell>;
+  return <>{children}</>;
 }

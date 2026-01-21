@@ -6,8 +6,6 @@ import ProductChartMui from "@/components/dashboard/ProductChartMui";
 import RecentDeliveries from "@/components/dashboard/RecentDeliveries";
 import { Grid, Card, Typography, Box, Stack } from "@mui/material";
 import WidgetList from "@/components/dashboard/WidgetList";
-import { mockTopCustomers, mockTopCouriers } from "@/data/mocks/widgets";
-import { mockRecentRegistrations } from "@/data/mocks/registrations";
 import { LinksEnum } from "@/utilities/pagesLInksEnum";
 import {
   LocalShipping as DeliveredIcon,
@@ -16,6 +14,8 @@ import {
   ListAlt as OrdersIcon,
 } from "@mui/icons-material";
 import CardStats from "@/components/CardStats";
+import { useContext } from "react";
+import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 
 import { useOperationalStats } from "@/hooks/useOperationalStats";
 import { CircularProgress } from "@mui/material";
@@ -24,6 +24,15 @@ type Props = {};
 
 const page = (props: Props) => {
   const { data, loading } = useOperationalStats();
+  const { selectedCurr } = useContext(CurrencyContext);
+
+  const formatPrice = (priceUSD: number) => {
+    const converted = priceUSD * selectedCurr.value;
+    if (selectedCurr.symbol === "FCFA" || selectedCurr.symbol === "₦") {
+      return `${Math.round(converted).toLocaleString()} ${selectedCurr.symbol}`;
+    }
+    return `${selectedCurr.symbol}${converted.toFixed(2)}`;
+  };
 
   if (loading) {
     return (
@@ -46,7 +55,7 @@ const page = (props: Props) => {
     },
     {
       title: "Revenue",
-      value: `${s?.revenue?.toLocaleString() || "0"} CFA`,
+      value: formatPrice(s?.revenue || 0),
       change: "Ventes validées",
       icon: <RevenueIcon />,
       color: "common.white",
@@ -115,22 +124,15 @@ const page = (props: Props) => {
             <Box sx={{ flex: 1, minHeight: 300 }}>
               <WidgetList
                 title="Top 5 Customers"
-                items={mockTopCustomers}
+                items={data?.topCustomers || []}
                 viewAllLink={LinksEnum.distributors}
               />
             </Box>
             <Box sx={{ flex: 1, minHeight: 300 }}>
               <WidgetList
                 title="Top 5 Couriers"
-                items={mockTopCouriers}
+                items={data?.topCouriers || []}
                 viewAllLink={LinksEnum.couriers}
-              />
-            </Box>
-            <Box sx={{ flex: 1, minHeight: 300 }}>
-              <WidgetList
-                title="Recent Registrations"
-                items={mockRecentRegistrations}
-                viewAllLink={LinksEnum.distributors}
               />
             </Box>
           </Stack>
@@ -141,3 +143,4 @@ const page = (props: Props) => {
 };
 
 export default page;
+

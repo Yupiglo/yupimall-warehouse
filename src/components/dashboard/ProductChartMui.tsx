@@ -8,15 +8,23 @@ import {
   Chip,
 } from "@mui/material";
 import { BarChart } from "@mui/x-charts/BarChart";
-import { mockProducts } from "@/data/mocks/products";
-
-const data = mockProducts.map((item, index) => ({
-  ...item,
-  label: String.fromCharCode(65 + index), // A, B, C, ...
-}));
+import { useOperationalStats } from "@/hooks/useOperationalStats";
 
 export default function ProductChartMui() {
   const theme = useTheme();
+  const { data } = useOperationalStats();
+
+  const chartData = data?.ordersByStatus || [];
+
+  if (chartData.length === 0) {
+    return (
+      <Box sx={{ p: 3, textAlign: "center" }}>
+        <Typography variant="body2" color="text.secondary">
+          Aucune donnée disponible
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box
@@ -24,21 +32,21 @@ export default function ProductChartMui() {
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        pb: 3,
-        pr: 3,
+        pb: 2,
+        pr: 2,
       }}
     >
       {/* Chart Section */}
-      <Box sx={{ flexGrow: 1, width: "100%", minHeight: 400 }}>
+      <Box sx={{ flexGrow: 1, width: "100%", minHeight: 200 }}>
         <BarChart
-          dataset={data}
+          dataset={chartData}
           xAxis={[
             {
               scaleType: "band",
               dataKey: "label",
               tickLabelStyle: {
                 fill: theme.palette.text.secondary,
-                fontSize: 12,
+                fontSize: 10,
                 fontWeight: "bold",
               },
             },
@@ -52,17 +60,17 @@ export default function ProductChartMui() {
           series={[
             {
               dataKey: "quantity",
-              valueFormatter: (value) => `${value} units`,
+              valueFormatter: (value) => `${value}`,
             },
           ]}
-          height={400}
+          height={200}
           slotProps={{
             legend: {
               hidden: true,
             } as any,
           }}
-          colors={data.map((d) => d.color)}
-          margin={{ top: 40, bottom: 20, left: 0, right: 0 }}
+          colors={chartData.map((d) => d.color)}
+          margin={{ top: 20, bottom: 30, left: 40, right: 10 }}
           sx={{
             "& .MuiBarElement-root": {
               rx: 4,
@@ -72,26 +80,29 @@ export default function ProductChartMui() {
       </Box>
 
       {/* Legend Section */}
-      <Box sx={{ mt: 0, pt: 1, borderTop: 1, borderColor: "divider" }}>
-        <Stack direction="row" flexWrap="wrap" justifyContent="center" gap={2}>
-          {data.map((item) => (
+      <Box sx={{ mt: 1, pt: 1, borderTop: 1, borderColor: "divider" }}>
+        <Stack direction="row" flexWrap="wrap" justifyContent="center" gap={1}>
+          {chartData.map((item) => (
             <Stack
-              key={item.name}
+              key={item.label}
               direction="row"
               alignItems="center"
-              spacing={1}
+              spacing={0.5}
             >
-              <Chip
-                label={item.label}
-                size="small"
-                sx={{ height: 20, fontSize: "0.7rem", fontWeight: "bold" }}
+              <Box
+                sx={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  bgcolor: item.color,
+                }}
               />
               <Typography
-                variant="body2"
+                variant="caption"
                 color="text.secondary"
-                fontWeight="medium"
+                sx={{ fontSize: "0.65rem" }}
               >
-                {item.name}
+                {item.label} ({item.quantity})
               </Typography>
             </Stack>
           ))}

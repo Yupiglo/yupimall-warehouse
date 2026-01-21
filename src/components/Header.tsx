@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   AppBar,
   Toolbar,
@@ -10,15 +11,20 @@ import {
   Stack,
   useTheme,
   Divider,
+  Badge,
 } from "@mui/material";
 import {
   Menu as MenuIcon,
   Brightness4 as Brightness4Icon,
   Brightness7 as Brightness7Icon,
+  ShoppingCart as CartIcon,
 } from "@mui/icons-material";
 import { useColorMode } from "./ThemeRegistry/ColorModeContext";
 import AvatarImg from "@/assets/Avatar.png";
 import NotificationsMenu from "@/components/NotificationsMenu";
+import CartDrawer from "@/components/CartDrawer";
+import CurrencySelector from "@/components/CurrencySelector";
+import { useCart } from "@/hooks/useCart";
 
 type HeaderProps = {
   onMenuClick: () => void;
@@ -27,126 +33,168 @@ type HeaderProps = {
 export default function Header({ onMenuClick }: HeaderProps) {
   const theme = useTheme();
   const colorMode = useColorMode();
+  const { cartItemCount } = useCart();
+  const [cartOpen, setCartOpen] = useState(false);
 
   return (
-    <AppBar
-      position="sticky"
-      elevation={0}
-      sx={{
-        background: (theme) =>
-          theme.palette.mode === "light"
-            ? "rgba(255, 255, 255, 0.7)"
-            : "rgba(18, 18, 18, 0.7)",
-        backdropFilter: "blur(20px)",
-        borderBottom: "1px solid",
-        borderColor: "divider",
-        color: "text.primary",
-        top: 0,
-        width: { lg: `calc(100% - 280px)` },
-        ml: { lg: "280px" },
-      }}
-    >
-      <Toolbar sx={{ minHeight: { xs: 70, md: 80 } }}>
-        <IconButton
-          edge="start"
-          color="inherit"
-          aria-label="open drawer"
-          onClick={onMenuClick}
-          sx={{
-            mr: 2,
-            display: { lg: "none" },
-            bgcolor: "action.hover",
-            borderRadius: "12px",
-          }}
-        >
-          <MenuIcon />
-        </IconButton>
-
-        {/* Spacer to push actions to the right */}
-        <Box sx={{ flexGrow: 1 }} />
-
-        {/* Actions */}
-        <Stack direction="row" spacing={1.5} alignItems="center">
+    <>
+      <AppBar
+        position="sticky"
+        elevation={0}
+        sx={{
+          background: (theme) =>
+            theme.palette.mode === "light"
+              ? "rgba(255, 255, 255, 0.7)"
+              : "rgba(18, 18, 18, 0.7)",
+          backdropFilter: "blur(20px)",
+          borderBottom: "1px solid",
+          borderColor: "divider",
+          color: "text.primary",
+          top: 0,
+          width: { lg: `calc(100% - 280px)` },
+          ml: { lg: "280px" },
+        }}
+      >
+        <Toolbar sx={{ minHeight: { xs: 70, md: 80 } }}>
           <IconButton
-            onClick={colorMode.toggleColorMode}
+            edge="start"
+            color="inherit"
+            aria-label="open drawer"
+            onClick={onMenuClick}
             sx={{
-              bgcolor: (theme) =>
-                theme.palette.mode === "light"
-                  ? "rgba(0,0,0,0.03)"
-                  : "rgba(255,255,255,0.03)",
-              borderRadius: "14px",
-              p: 1.2,
-              transition: "all 0.3s ease",
-              "&:hover": {
-                transform: "rotate(15deg)",
-                bgcolor: "primary.lighter",
-              },
+              mr: 2,
+              display: { lg: "none" },
+              bgcolor: "action.hover",
+              borderRadius: "12px",
             }}
           >
-            {theme.palette.mode === "dark" ? (
-              <Brightness7Icon sx={{ fontSize: 20 }} />
-            ) : (
-              <Brightness4Icon sx={{ fontSize: 20 }} />
-            )}
+            <MenuIcon />
           </IconButton>
 
-          <NotificationsMenu />
+          {/* Spacer to push actions to the right */}
+          <Box sx={{ flexGrow: 1 }} />
 
-          <Divider
-            orientation="vertical"
-            flexItem
-            sx={{ mx: 1, height: 24, alignSelf: "center", opacity: 0.5 }}
-          />
-
-          <Stack
-            direction="row"
-            spacing={1.5}
-            alignItems="center"
-            sx={{
-              pl: 1,
-              pr: 0.5,
-              py: 0.5,
-              borderRadius: "16px",
-              cursor: "pointer",
-              transition: "all 0.2s",
-              "&:hover": { bgcolor: "action.hover" },
-            }}
-          >
-            <Avatar
+          {/* Actions */}
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <IconButton
+              onClick={colorMode.toggleColorMode}
               sx={{
-                width: 42,
-                height: 42,
-                border: "2px solid",
-                borderColor: "primary.lighter",
-                boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
+                bgcolor: (theme) =>
+                  theme.palette.mode === "light"
+                    ? "rgba(0,0,0,0.03)"
+                    : "rgba(255,255,255,0.03)",
+                borderRadius: "14px",
+                p: 1.2,
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  transform: "rotate(15deg)",
+                  bgcolor: "primary.lighter",
+                },
               }}
-              src={AvatarImg.src}
-            />
-            <Box sx={{ display: { xs: "none", sm: "block" } }}>
-              <Typography
-                variant="subtitle2"
-                component="div"
-                fontWeight="900"
-                sx={{ lineHeight: 1.2 }}
-              >
-                John Doe
-              </Typography>
-              <Typography
-                variant="caption"
-                color="primary.main"
-                fontWeight="800"
+            >
+              {theme.palette.mode === "dark" ? (
+                <Brightness7Icon sx={{ fontSize: 20 }} />
+              ) : (
+                <Brightness4Icon sx={{ fontSize: 20 }} />
+              )}
+            </IconButton>
+
+            {/* Currency Selector */}
+            <CurrencySelector />
+
+            {/* Cart Icon */}
+            <IconButton
+              onClick={() => setCartOpen(true)}
+              sx={{
+                bgcolor: (theme) =>
+                  theme.palette.mode === "light"
+                    ? "rgba(0,0,0,0.03)"
+                    : "rgba(255,255,255,0.03)",
+                borderRadius: "14px",
+                p: 1.2,
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  bgcolor: "primary.lighter",
+                },
+              }}
+            >
+              <Badge
+                badgeContent={cartItemCount}
+                color="primary"
                 sx={{
-                  fontSize: "0.65rem",
-                  textTransform: "uppercase",
-                  letterSpacing: 0.5,
+                  "& .MuiBadge-badge": {
+                    fontSize: "0.65rem",
+                    fontWeight: 800,
+                    minWidth: 18,
+                    height: 18,
+                  },
                 }}
               >
-                Warehouse Admin
-              </Typography>
-            </Box>
+                <CartIcon sx={{ fontSize: 20 }} />
+              </Badge>
+            </IconButton>
+
+            <NotificationsMenu />
+
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={{ mx: 1, height: 24, alignSelf: "center", opacity: 0.5 }}
+            />
+
+            <Stack
+              direction="row"
+              spacing={1.5}
+              alignItems="center"
+              sx={{
+                pl: 1,
+                pr: 0.5,
+                py: 0.5,
+                borderRadius: "16px",
+                cursor: "pointer",
+                transition: "all 0.2s",
+                "&:hover": { bgcolor: "action.hover" },
+              }}
+            >
+              <Avatar
+                sx={{
+                  width: 42,
+                  height: 42,
+                  border: "2px solid",
+                  borderColor: "primary.lighter",
+                  boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
+                }}
+                src={AvatarImg.src}
+              />
+              <Box sx={{ display: { xs: "none", sm: "block" } }}>
+                <Typography
+                  variant="subtitle2"
+                  component="div"
+                  fontWeight="900"
+                  sx={{ lineHeight: 1.2 }}
+                >
+                  John Doe
+                </Typography>
+                <Typography
+                  variant="caption"
+                  color="primary.main"
+                  fontWeight="800"
+                  sx={{
+                    fontSize: "0.65rem",
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Warehouse Admin
+                </Typography>
+              </Box>
+            </Stack>
           </Stack>
-        </Stack>
-      </Toolbar>
-    </AppBar>
+        </Toolbar>
+      </AppBar>
+
+      {/* Cart Drawer */}
+      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
+    </>
   );
 }

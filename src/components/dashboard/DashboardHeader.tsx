@@ -117,7 +117,7 @@ export default function DashboardHeader() {
                   letterSpacing: -1,
                 }}
               >
-                Welcome back, Admin!
+                Welcome back, Warehouse!
               </Typography>
               <Typography
                 variant="h6"

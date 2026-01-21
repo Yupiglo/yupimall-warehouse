@@ -13,6 +13,7 @@ interface NotificationEvent {
     supervisor_id?: number;
     stockist_id?: number | string;
     updated_at?: string;
+    type?: string;
 }
 
 export function useRealtimeNotifications(onNewNotification?: (event: any) => void) {

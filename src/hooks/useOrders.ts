@@ -12,7 +12,6 @@ interface Order {
     status: string;
     createdAt: string;
     customer: string;
-    amount: string;
 }
 
 export function useOrders() {
@@ -55,7 +54,6 @@ export function useOrders() {
                     createdAt: new Date().toISOString(),
                     date: new Date().toLocaleDateString(),
                     customer: event.user_name,
-                    amount: `${event.total} CFA`
                 }, ...prev];
             });
         }

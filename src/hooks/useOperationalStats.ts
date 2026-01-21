@@ -32,6 +32,32 @@ export interface OperationalStats {
         status: string;
         updatedAt: string;
     }[];
+    topCustomers?: {
+        id: number;
+        title: string;
+        subtitle: string;
+        value: string;
+        image?: string;
+    }[];
+    topCouriers?: {
+        id: number;
+        title: string;
+        subtitle: string;
+        value: string;
+        image?: string;
+    }[];
+    recentRegistrations?: {
+        id: number;
+        title: string;
+        subtitle: string;
+        badge?: string;
+        badgeColor?: string;
+    }[];
+    ordersByStatus?: {
+        label: string;
+        quantity: number;
+        color: string;
+    }[];
 }
 
 export function useOperationalStats() {
