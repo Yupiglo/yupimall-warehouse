@@ -203,7 +203,7 @@ export default function ProductDetailPage({
 
       <Grid container spacing={4}>
         {/* Left Column: Images */}
-        <Grid item xs={12} md={5}>
+        <Grid size={{ xs: 12, md: 5 }}>
           <Stack spacing={2}>
             <Card
               sx={{
@@ -258,7 +258,7 @@ export default function ProductDetailPage({
         </Grid>
 
         {/* Right Column: Details */}
-        <Grid item xs={12} md={7}>
+        <Grid size={{ xs: 12, md: 7 }}>
           <Stack spacing={3}>
             <Card
               sx={{
@@ -326,7 +326,7 @@ export default function ProductDetailPage({
                     </Typography>
                     <Grid container spacing={2}>
                       {productVariants.map((v, i) => (
-                        <Grid item key={i} xs={6} sm={4}>
+                        <Grid key={i} size={{ xs: 6, sm: 4 }}>
                           <Box sx={{
                             p: 1.5,
                             borderRadius: "16px",
@@ -407,7 +407,7 @@ export default function ProductDetailPage({
             </Card>
 
             <Grid container spacing={2}>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <Card sx={{ borderRadius: "24px" }}>
                   <CardContent sx={{ p: 4 }}>
                     {/* benefits */}
@@ -419,7 +419,7 @@ export default function ProductDetailPage({
                         </Typography>
                         <Grid container spacing={2}>
                           {product.benefits.map((benefit: string, i: number) => (
-                            <Grid item key={i} xs={12} sm={6}>
+                            <Grid key={i} size={{ xs: 12, sm: 6 }}>
                               <Stack direction="row" spacing={1.5} alignItems="flex-start">
                                 <Box sx={{ mt: 0.5, width: 8, height: 8, borderRadius: "50%", bgcolor: "success.main", flexShrink: 0 }} />
                                 <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>{benefit}</Typography>
@@ -460,7 +460,7 @@ export default function ProductDetailPage({
                     {/* usage & research */}
                     <Grid container spacing={4}>
                       {product.howToUse && (
-                        <Grid item xs={12} sm={6}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
                           <Typography variant="h6" fontWeight="800" sx={{ mb: 2, display: "flex", alignItems: "center", gap: 1 }}>
                             <Box sx={{ width: 4, height: 24, bgcolor: "info.main", borderRadius: "2px" }} />
                             Conseils d'utilisation
@@ -471,7 +471,7 @@ export default function ProductDetailPage({
                         </Grid>
                       )}
                       {product.clinicalResearch && (
-                        <Grid item xs={12} sm={6}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
                           <Typography variant="h6" fontWeight="800" sx={{ mb: 2, display: "flex", alignItems: "center", gap: 1 }}>
                             <Box sx={{ width: 4, height: 24, bgcolor: "warning.main", borderRadius: "2px" }} />
                             Recherche Clinique
@@ -486,19 +486,19 @@ export default function ProductDetailPage({
                     <Divider sx={{ my: 4 }} />
 
                     <Grid container spacing={3}>
-                      <Grid item xs={6} sm={3}>
+                      <Grid size={{ xs: 6, sm: 3 }}>
                         <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>Marque</Typography>
                         <Typography variant="body2" fontWeight="800">{typeof product.brand === "string" ? product.brand : (product.brand?.name || "N/A")}</Typography>
                       </Grid>
-                      <Grid item xs={6} sm={3}>
+                      <Grid size={{ xs: 6, sm: 3 }}>
                         <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>Vendus</Typography>
                         <Typography variant="body2" fontWeight="800">{product.sold || 0} unités</Typography>
                       </Grid>
-                      <Grid item xs={6} sm={3}>
+                      <Grid size={{ xs: 6, sm: 3 }}>
                         <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>Disponibilité</Typography>
                         <Typography variant="body2" fontWeight="800">{product.quantity} en stock</Typography>
                       </Grid>
-                      <Grid item xs={6} sm={3}>
+                      <Grid size={{ xs: 6, sm: 3 }}>
                         <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>SKU</Typography>
                         <Typography variant="body2" fontWeight="800">#{product.id.toString().slice(-6).toUpperCase()}</Typography>
                       </Grid>
