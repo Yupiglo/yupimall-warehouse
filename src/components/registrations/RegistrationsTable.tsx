@@ -46,6 +46,7 @@ interface Registration {
     plan: string;
     payment_method: string;
     status: string;
+    requested_role: string;
     created_at: string;
     created_by: number | null;
 }
