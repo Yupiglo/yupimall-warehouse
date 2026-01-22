@@ -5,8 +5,10 @@ import Favicon from "@/assets/Logo/favicon.ico";
 import { env } from "next-runtime-env";
 import cover from "@/assets/AuthImageCover.svg";
 
+const yupiFlowUrl = env("NEXT_PUBLIC_YUPIFLOW_URL") || "https://yupimall.net";
+
 export const metadata: Metadata = {
-  metadataBase: new URL(`${env("NEXT_PUBLIC_YUPIFLOW_URL")}`),
+  metadataBase: new URL(yupiFlowUrl),
   title: "YupiFlow Dashboard",
   description: "YupiFlow Dashboard Application",
   icons: [{ rel: "icon", url: Favicon.src }],
@@ -14,10 +16,10 @@ export const metadata: Metadata = {
     type: "website",
     description: "",
     title: "YupiFlow Dashboard Application",
-    url: `${env("NEXT_PUBLIC_YUPIFLOW_URL")}`,
+    url: yupiFlowUrl,
     images: [
       {
-        url: `${env("NEXT_PUBLIC_YUPIFLOW_URL")}${cover.src}`,
+        url: `${yupiFlowUrl}${cover.src}`,
       },
     ],
   },
