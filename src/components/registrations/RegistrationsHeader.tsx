@@ -84,7 +84,7 @@ export default function RegistrationsHeader({
             >
                 <Box>
                     <Typography variant="h4" fontWeight="bold" color="primary.main" gutterBottom>
-                        Gestion des Inscriptions
+                        Gestion des Inscriptions (v1.0.1)
                     </Typography>
                     <Typography variant="body1" color="text.secondary">
                         Inscrivez de nouveaux stockists ou validez les demandes en attente.
@@ -121,7 +121,7 @@ export default function RegistrationsHeader({
             <Box sx={{ mb: 4 }}>
                 <Grid container spacing={3}>
                     {statCards.map((stat, index) => (
-                        <Grid key={index} item xs={12} md={4}>
+                        <Grid key={index} size={{ xs: 12, md: 4 }}>
                             <Card variant="outlined" sx={{ borderRadius: "16px", border: "1px solid", borderColor: "divider" }}>
                                 <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
                                     <Stack direction="row" spacing={2} alignItems="center">
