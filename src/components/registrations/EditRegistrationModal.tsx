@@ -33,6 +33,7 @@ interface Registration {
     status: string;
     requested_role: string;
     created_at: string;
+    created_by: number | null;
 }
 
 interface EditRegistrationModalProps {
