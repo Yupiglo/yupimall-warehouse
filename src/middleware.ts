@@ -9,7 +9,12 @@ export default auth((req: NextRequest & { auth: any }) => {
 
     if (isLoginPage || isRecoverPage || isRegisterPage) {
         if (isAuthenticated) {
-            return NextResponse.redirect(new URL("/dashboard", req.url));
+            const userRole = req.auth?.user?.role;
+            if (userRole === "warehouse") {
+                return NextResponse.redirect(new URL("/dashboard", req.url));
+            }
+            // If authenticated but wrong role, stay on login page to avoid loop
+            return NextResponse.next();
         }
         return NextResponse.next();
     }
