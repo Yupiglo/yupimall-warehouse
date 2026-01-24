@@ -1,6 +1,5 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import axios from "axios";
 import { type DefaultSession } from "next-auth";
 import { type JWT } from "next-auth/jwt";
 
@@ -45,23 +44,28 @@ declare module "next-auth/jwt" {
 export async function refreshAccessToken(token: JWT) {
     try {
         console.log("AUTH_DEBUG: Refreshing token at", `${baseUrl}/api/v1/auth/refresh-token/`);
-        const response = await axios.post(
-            `${baseUrl}/api/v1/auth/refresh-token/`,
-            {
-                refresh: token.refreshToken,
+
+        const response = await fetch(`${baseUrl}/api/v1/auth/refresh-token/`, {
+            method: "POST",
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
             },
-            {
-                headers: {
-                    "Accept": "application/json",
-                    "Content-Type": "application/json",
-                },
-            }
-        );
+            body: JSON.stringify({
+                refresh: token.refreshToken,
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Refresh failed with status: ${response.status}`);
+        }
+
+        const data = await response.json();
 
         return {
             ...token,
-            accessToken: response.data.access || token.accessToken,
-            refreshToken: response.data.refresh ?? token.refreshToken,
+            accessToken: data.access || token.accessToken,
+            refreshToken: data.refresh ?? token.refreshToken,
             expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days
         };
     } catch (error) {
@@ -84,46 +88,50 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 try {
                     console.log("AUTH_DEBUG: Attempting signin for", credentials?.email, "at", `${baseUrl}/api/v1/auth/signin`);
 
-                    const response = await axios.post(
-                        `${baseUrl}/api/v1/auth/signin`,
-                        {
+                    const response = await fetch(`${baseUrl}/api/v1/auth/signin`, {
+                        method: "POST",
+                        headers: {
+                            "Accept": "application/json",
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
                             username: credentials.email,
                             password: credentials.password,
-                        },
-                        {
-                            headers: {
-                                "Accept": "application/json",
-                                "Content-Type": "application/json",
-                            },
-                        }
-                    );
+                        }),
+                    });
 
-                    console.log("AUTH_DEBUG: Response status:", response.data.status);
+                    if (!response.ok) {
+                        console.log("AUTH_DEBUG: Authentication failed - Server returned", response.status);
+                        return null;
+                    }
 
-                    if (response.data.status === 200 && response.data.user.token) {
-                        console.log("AUTH_DEBUG: User role:", response.data.user.role);
+                    const data = await response.json();
+                    console.log("AUTH_DEBUG: Response status:", data.status);
+
+                    if (data.status === 200 && data.user.token) {
+                        console.log("AUTH_DEBUG: User role:", data.user.role);
                         // Restriction: Only Warehouse users allowed in this panel
-                        if (response.data.user.role !== 'warehouse') {
+                        if (data.user.role !== 'warehouse') {
                             console.log("AUTH_DEBUG: Access denied - role mismatch (expected warehouse)");
                             return null;
                         }
 
-                        console.log("AUTH_DEBUG: Authentication successful for", response.data.user.username);
+                        console.log("AUTH_DEBUG: Authentication successful for", data.user.username);
 
                         return {
-                            id: response.data.user.id.toString(),
-                            name: response.data.user.username,
-                            email: response.data.user.email,
-                            access: response.data.user.token,
-                            refresh: response.data.user.token,
-                            role: response.data.user.role,
-                            country: response.data.user.country,
+                            id: data.user.id.toString(),
+                            name: data.user.username,
+                            email: data.user.email,
+                            access: data.user.token,
+                            refresh: data.user.token,
+                            role: data.user.role,
+                            country: data.user.country,
                         };
                     }
                     console.log("AUTH_DEBUG: Authentication failed - Invalid status or missing token");
                     return null;
                 } catch (error: any) {
-                    console.error("AUTH_DEBUG: Authorize error:", error.response?.status, error.response?.data || error.message);
+                    console.error("AUTH_DEBUG: Authorize error:", error.message);
                     return null;
                 }
             },
@@ -171,10 +179,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 httpOnly: true,
                 sameSite: "lax",
                 path: "/",
-                secure: process.env.NODE_ENV === "production",
+                secure: false, // Set to false to avoid issues with HTTP/HTTPS proxies if not perfectly configured
             },
         },
     },
     trustHost: true,
     secret: process.env.AUTH_SECRET,
 });
+
