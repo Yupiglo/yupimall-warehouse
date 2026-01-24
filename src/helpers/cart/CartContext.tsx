@@ -2,6 +2,8 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import axiosInstance from "@/lib/axios";
+import { useSession } from "next-auth/react";
+
 
 export interface CartItem {
     _id: string;
@@ -129,9 +131,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     const cartItemCount = cart?.cartItem?.reduce((sum, item) => sum + item.quantity, 0) || 0;
 
+    const { status } = useSession();
+
     useEffect(() => {
-        fetchCart();
-    }, [fetchCart]);
+        if (status === "authenticated") {
+            fetchCart();
+        } else if (status === "unauthenticated") {
+            setCart(null);
+        }
+    }, [fetchCart, status]);
+
 
     return (
         <CartContext.Provider

@@ -33,13 +33,12 @@ axiosInstance.interceptors.response.use(
     (response) => response,
     async (error: any) => {
         if (error.response && error.response.status === 401) {
-            console.error("Unauthorized - session may have expired");
-            if (typeof window !== "undefined") {
-                window.location.href = "/logout";
-            }
+            console.error("Unauthorized API call detected (401)");
+            // Do not redirect here to avoid infinite loops on background fetches (like Cart)
         }
         return Promise.reject(error);
     }
 );
+
 
 export default axiosInstance;
