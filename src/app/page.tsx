@@ -10,6 +10,6 @@ export default function Home() {
     router.push("/dashboard");
   }, []);
 
-  return;
+  return null;
 }
 
