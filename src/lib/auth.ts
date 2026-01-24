@@ -172,18 +172,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         signOut: "/logout",
     },
     session: { strategy: "jwt" },
-    cookies: {
-        sessionToken: {
-            name: `next-auth.session-token.warehouse`,
-            options: {
-                httpOnly: true,
-                sameSite: "lax",
-                path: "/",
-                secure: false, // Set to false to avoid issues with HTTP/HTTPS proxies if not perfectly configured
-            },
-        },
-    },
     trustHost: true,
-    secret: process.env.AUTH_SECRET,
+    secret: process.env.AUTH_SECRET || "default_landing_secret_for_build",
 });
+
 
