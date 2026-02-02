@@ -8,7 +8,7 @@ import {
   Inventory2 as InventoryIcon,
 } from "@mui/icons-material";
 import Link from "next/link";
-import { LinksEnum } from "@/utilities/pagesLInksEnum";
+import { LinksEnum } from "@/utilities/pagesLinksEnum";
 import ProductsHeader from "@/components/products/ProductsHeader";
 import ProductsTable from "@/components/products/ProductsTable";
 

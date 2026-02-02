@@ -28,7 +28,7 @@ import {
   LocationOn as LocationIcon,
   ShowChart as VolumeIcon,
 } from "@mui/icons-material";
-import { LinksEnum } from "@/utilities/pagesLInksEnum";
+import { LinksEnum } from "@/utilities/pagesLinksEnum";
 import DefaultAvatar from "@/assets/AvatarBig.png";
 
 const distributors = [

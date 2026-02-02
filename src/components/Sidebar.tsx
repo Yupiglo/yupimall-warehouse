@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import LogoBig from "@/assets/Logo/LogoBig.png";
-import { LinksEnum } from "@/utilities/pagesLInksEnum";
+import { LinksEnum } from "@/utilities/pagesLinksEnum";
 import {
   Drawer,
   List,

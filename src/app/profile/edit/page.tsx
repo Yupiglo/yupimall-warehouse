@@ -21,7 +21,7 @@ import {
   ChevronRight as ChevronRightIcon,
 } from "@mui/icons-material";
 import Link from "next/link";
-import { LinksEnum } from "@/utilities/pagesLInksEnum";
+import { LinksEnum } from "@/utilities/pagesLinksEnum";
 // import ProfileUserCard from "@/components/profile/ProfileUserCard";
 
 export default function EditProfilePage() {

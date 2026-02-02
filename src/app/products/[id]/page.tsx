@@ -31,7 +31,7 @@ import {
   Star as StarIcon,
 } from "@mui/icons-material";
 import Link from "next/link";
-import { LinksEnum } from "@/utilities/pagesLInksEnum";
+import { LinksEnum } from "@/utilities/pagesLinksEnum";
 import { useProduct } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";

@@ -14,7 +14,7 @@ import {
   Card,
 } from "@mui/material";
 import Link from "next/link";
-import { LinksEnum } from "@/utilities/pagesLInksEnum";
+import { LinksEnum } from "@/utilities/pagesLinksEnum";
 import { useContext } from "react";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 interface OrdersTableProps {

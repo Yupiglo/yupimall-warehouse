@@ -4,7 +4,7 @@ import { Box } from "@mui/material";
 import StockistsHeader from "@/components/stockists/StockistsHeader";
 import StockistsTable from "@/components/stockists/StockistsTable";
 import { Breadcrumbs, Link, Typography } from "@mui/material";
-import { LinksEnum } from "@/utilities/pagesLInksEnum";
+import { LinksEnum } from "@/utilities/pagesLinksEnum";
 import {
   Home as HomeIcon,
   ChevronRight as ChevronRightIcon,

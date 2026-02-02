@@ -4,7 +4,7 @@ import { Box, Stack, Breadcrumbs, Typography } from "@mui/material";
 import CouriersHeader from "@/components/couriers/CouriersHeader";
 import CouriersTable from "@/components/couriers/CouriersTable";
 import Link from "next/link";
-import { LinksEnum } from "@/utilities/pagesLInksEnum";
+import { LinksEnum } from "@/utilities/pagesLinksEnum";
 import {
   Home as HomeIcon,
   ChevronRight as ChevronRightIcon,

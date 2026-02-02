@@ -7,9 +7,20 @@ interface Order {
     id: number;
     trackingCode: string;
     status: string;
-    customer: string;
-    customerPhone: string;
+    isPaid: boolean;
+    isDelivered: boolean;
     total: number;
+    customer: string;
+    customerEmail?: string;
+    shippingAddress?: {
+        street?: string;
+        city?: string;
+        phone?: string;
+        country?: string;
+    };
+    paymentMethod?: string;
+    paidAt?: string;
+    deliveredAt?: string;
     createdAt: string;
     items: any[];
 }
@@ -25,7 +36,18 @@ export function useOrderDetail(id: string) {
             setLoading(true);
             const response = await axiosInstance.get(`orders/${id}`);
             if (response.data.message === 'success') {
-                setOrder(response.data.order);
+                const data = response.data.order;
+                // Map cartItem to items for UI compatibility
+                const mappedOrder: Order = {
+                    ...data,
+                    items: data.cartItem?.map((ci: any) => ({
+                        product: typeof ci.productId === 'object' ? ci.productId : { title: 'Produit', price: ci.price },
+                        quantity: ci.quantity,
+                        price: ci.price,
+                        totalPrice: ci.price * ci.quantity
+                    })) || []
+                };
+                setOrder(mappedOrder);
             }
         } catch (err) {
             console.error("Error fetching order:", err);

@@ -27,7 +27,7 @@ import {
   LocationOn as LocationIcon,
   Inventory as StockIcon,
 } from "@mui/icons-material";
-import { LinksEnum } from "@/utilities/pagesLInksEnum";
+import { LinksEnum } from "@/utilities/pagesLinksEnum";
 import DefaultAvatar from "@/assets/AvatarBig.png";
 
 const stockists = [

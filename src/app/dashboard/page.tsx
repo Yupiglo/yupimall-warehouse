@@ -6,7 +6,7 @@ import ProductChartMui from "@/components/dashboard/ProductChartMui";
 import RecentDeliveries from "@/components/dashboard/RecentDeliveries";
 import { Grid, Card, Typography, Box, Stack } from "@mui/material";
 import WidgetList from "@/components/dashboard/WidgetList";
-import { LinksEnum } from "@/utilities/pagesLInksEnum";
+import { LinksEnum } from "@/utilities/pagesLinksEnum";
 import {
   LocalShipping as DeliveredIcon,
   Engineering as ActiveGuysIcon,

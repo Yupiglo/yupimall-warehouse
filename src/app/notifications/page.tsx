@@ -8,7 +8,7 @@ import {
   Stack,
   Button,
 } from "@mui/material";
-import { LinksEnum } from "@/utilities/pagesLInksEnum";
+import { LinksEnum } from "@/utilities/pagesLinksEnum";
 import {
   Home as HomeIcon,
   ChevronRight as ChevronRightIcon,

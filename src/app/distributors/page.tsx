@@ -4,7 +4,7 @@ import { Box } from "@mui/material";
 import DistributorsHeader from "@/components/distributors/DistributorsHeader";
 import DistributorsTable from "@/components/distributors/DistributorsTable";
 import { Breadcrumbs, Link, Typography } from "@mui/material";
-import { LinksEnum } from "@/utilities/pagesLInksEnum";
+import { LinksEnum } from "@/utilities/pagesLinksEnum";
 import {
   Home as HomeIcon,
   ChevronRight as ChevronRightIcon,

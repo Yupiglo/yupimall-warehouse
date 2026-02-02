@@ -7,7 +7,7 @@ import {
   Lock as LockIcon,
 } from "@mui/icons-material";
 import Link from "next/link";
-import { LinksEnum } from "@/utilities/pagesLInksEnum";
+import { LinksEnum } from "@/utilities/pagesLinksEnum";
 
 export default function DashboardHeader() {
   return (

@@ -27,7 +27,7 @@ import {
   ChevronRight as ChevronRightIcon,
 } from "@mui/icons-material";
 import Link from "next/link";
-import { LinksEnum } from "@/utilities/pagesLInksEnum";
+import { LinksEnum } from "@/utilities/pagesLinksEnum";
 
 export default function DistributorEditPage({
   params,

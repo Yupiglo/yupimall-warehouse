@@ -7,7 +7,7 @@ import {
   ChevronRight as ChevronRightIcon,
   LocalShipping as DeliveryIcon,
 } from "@mui/icons-material";
-import { LinksEnum } from "@/utilities/pagesLInksEnum";
+import { LinksEnum } from "@/utilities/pagesLinksEnum";
 import DeliveriesHeader from "@/components/deliveries/DeliveriesHeader";
 import DeliveriesTable from "@/components/deliveries/DeliveriesTable";
 

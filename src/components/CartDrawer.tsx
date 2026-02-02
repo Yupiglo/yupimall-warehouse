@@ -22,7 +22,7 @@ import {
 } from "@mui/icons-material";
 import { useCart } from "@/hooks/useCart";
 import { useRouter } from "next/navigation";
-import { LinksEnum } from "@/utilities/pagesLInksEnum";
+import { LinksEnum } from "@/utilities/pagesLinksEnum";
 import CheckoutModal from "@/components/CheckoutModal";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 

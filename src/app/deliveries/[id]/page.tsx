@@ -27,7 +27,7 @@ import {
   Home as HomeIcon,
   ChevronRight as ChevronRightIcon,
 } from "@mui/icons-material";
-import { LinksEnum } from "@/utilities/pagesLInksEnum";
+import { LinksEnum } from "@/utilities/pagesLinksEnum";
 import TrackingMap from "@/components/deliveries/TrackingMap";
 
 import { useSearchParams } from "next/navigation";

@@ -26,7 +26,7 @@ import {
     ShoppingBag as OrderIcon,
 } from "@mui/icons-material";
 import Link from "next/link";
-import { LinksEnum } from "@/utilities/pagesLInksEnum";
+import { LinksEnum } from "@/utilities/pagesLinksEnum";
 import { useCart } from "@/hooks/useCart";
 import axiosInstance from "@/lib/axios";
 import { useRouter } from "next/navigation";
