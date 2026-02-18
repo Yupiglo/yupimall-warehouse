@@ -1,14 +1,38 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Box, Stack, Typography, Avatar } from "@mui/material";
-import AvatarBig from "@/assets/AvatarBig.png";
 import { Home as HomeIcon, Person as PersonIcon } from "@mui/icons-material";
 import ProfileDetails from "@/components/profile/ProfileDetails";
-
 import BreadcrumbsHeader from "@/components/common/BreadcrumbsHeader";
 import PageHeader from "@/components/common/PageHeader";
+import { useSession } from "next-auth/react";
+import axiosInstance from "@/lib/axios";
 
 export default function ProfilePage() {
+  const { data: session } = useSession();
+  const user = session?.user;
+  const [profile, setProfile] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await axiosInstance.get("me");
+        setProfile(response.data.user);
+      } catch (err) {
+        console.error("Failed to fetch profile:", err);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  const displayName = profile?.name || user?.name || "Utilisateur";
+  const displayRole = (user as any)?.role || "Warehouse";
+  const displayAvatar = profile?.avatar || profile?.image || user?.image || undefined;
+  const memberSince = profile?.created_at
+    ? new Date(profile.created_at).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })
+    : null;
+
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
       <BreadcrumbsHeader
@@ -36,18 +60,22 @@ export default function ProfilePage() {
             alignItems="center"
           >
             <Avatar
-              src={AvatarBig.src}
-              alt="Antony STARK"
+              src={displayAvatar}
+              alt={displayName}
               sx={{
                 width: 80,
                 height: 80,
                 boxShadow: (theme) => theme.shadows[2],
                 bgcolor: "primary.main",
+                fontSize: "2rem",
+                fontWeight: "bold",
               }}
-            />
+            >
+              {displayName.charAt(0).toUpperCase()}
+            </Avatar>
             <Box sx={{ textAlign: { xs: "center", sm: "left" } }}>
               <Typography variant="h5" fontWeight="800" gutterBottom>
-                Antony STARK
+                {displayName}
               </Typography>
               <Stack
                 direction="row"
@@ -59,20 +87,25 @@ export default function ProfilePage() {
                   variant="body2"
                   color="text.secondary"
                   fontWeight="600"
+                  sx={{ textTransform: "capitalize" }}
                 >
-                  Administrator
+                  {displayRole}
                 </Typography>
-                <Box
-                  sx={{
-                    width: 4,
-                    height: 4,
-                    bgcolor: "divider",
-                    borderRadius: "50%",
-                  }}
-                />
-                <Typography variant="caption" color="text.disabled">
-                  Member since Oct 2025
-                </Typography>
+                {memberSince && (
+                  <>
+                    <Box
+                      sx={{
+                        width: 4,
+                        height: 4,
+                        bgcolor: "divider",
+                        borderRadius: "50%",
+                      }}
+                    />
+                    <Typography variant="caption" color="text.disabled">
+                      Membre depuis {memberSince}
+                    </Typography>
+                  </>
+                )}
               </Stack>
             </Box>
           </Stack>
