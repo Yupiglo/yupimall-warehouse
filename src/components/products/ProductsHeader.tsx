@@ -20,6 +20,8 @@ import {
 } from "@mui/icons-material";
 import { useState, useEffect } from "react";
 import axiosInstance from "@/lib/axios";
+import { useProducts } from "@/hooks/useProducts";
+import { getImagePath } from "@/helpers/utils/image.utils";
 
 interface Category {
   _id: string;
@@ -32,33 +34,6 @@ interface Subcategory {
   name: string;
   slug?: string;
 }
-
-const bestSellers = [
-  {
-    id: 1,
-    name: "Classic Leather Jacket",
-    sales: 124,
-    growth: "+12.5%",
-    image:
-      "https://images.unsplash.com/photo-1551028150-64b9f398f678?w=100&h=100&fit=crop",
-  },
-  {
-    id: 2,
-    name: "Wireless Headphones",
-    sales: 98,
-    growth: "+8.2%",
-    image:
-      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=100&h=100&fit=crop",
-  },
-  {
-    id: 3,
-    name: "Smart Watch Series 5",
-    sales: 85,
-    growth: "+15.0%",
-    image:
-      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&h=100&fit=crop",
-  },
-];
 
 type ProductsHeaderProps = {
   selectedCategory: string;
@@ -81,9 +56,21 @@ export default function ProductsHeader({
   searchQuery,
   setSearchQuery,
 }: ProductsHeaderProps) {
+  const { products: allProducts } = useProducts();
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [loadingSubs, setLoadingSubs] = useState(false);
+
+  const bestSellers = (allProducts || [])
+    .filter((p: any) => p.sold_count > 0 || p.order_count > 0)
+    .sort((a: any, b: any) => (b.sold_count || b.order_count || 0) - (a.sold_count || a.order_count || 0))
+    .slice(0, 3)
+    .map((p: any) => ({
+      id: p.id,
+      name: p.name || p.title,
+      sales: p.sold_count || p.order_count || 0,
+      image: getImagePath(p.image || p.images?.[0]),
+    }));
 
   useEffect(() => {
     fetchCategories();
@@ -162,83 +149,80 @@ export default function ProductsHeader({
         </Box>
       </Stack>
 
-      {/* Best Selling Products Stats */}
-      <Box sx={{ mb: 6 }}>
-        <Typography
-          variant="subtitle1"
-          fontWeight="800"
-          sx={{
-            mb: 3,
-            display: "flex",
-            alignItems: "center",
-            gap: 1.5,
-            color: "text.primary",
-            textTransform: "uppercase",
-            letterSpacing: 2,
-            fontSize: "0.75rem",
-          }}
-        >
-          <Box
+      {bestSellers.length > 0 && (
+        <Box sx={{ mb: 6 }}>
+          <Typography
+            variant="subtitle1"
+            fontWeight="800"
             sx={{
-              p: 0.8,
-              bgcolor: "warning.main",
-              borderRadius: "8px",
+              mb: 3,
               display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+              color: "text.primary",
+              textTransform: "uppercase",
+              letterSpacing: 2,
+              fontSize: "0.75rem",
             }}
           >
-            <StarIcon sx={{ color: "white", fontSize: "1.1rem" }} />
-          </Box>
-          Top Performance Products
-        </Typography>
-        <Grid container spacing={3}>
-          {bestSellers.map((product) => (
-            <Grid key={product.id} size={{ xs: 12, sm: 6, md: 4 }}>
-              <Card
-                sx={{
-                  borderRadius: "24px",
-                  background: (theme) =>
-                    theme.palette.mode === "light" ? "#ffffff" : "#1e1e1e",
-                  border: "1px solid",
-                  borderColor: (theme) =>
-                    theme.palette.mode === "light"
-                      ? "rgba(0,0,0,0.08)"
-                      : "rgba(255,255,255,0.08)",
-                  transition: "all 0.3s ease",
-                  "&:hover": {
-                    transform: "translateY(-5px)",
-                    boxShadow: (theme) =>
+            <Box
+              sx={{
+                p: 0.8,
+                bgcolor: "warning.main",
+                borderRadius: "8px",
+                display: "flex",
+              }}
+            >
+              <StarIcon sx={{ color: "white", fontSize: "1.1rem" }} />
+            </Box>
+            Produits les plus vendus
+          </Typography>
+          <Grid container spacing={3}>
+            {bestSellers.map((product: any) => (
+              <Grid key={product.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                <Card
+                  sx={{
+                    borderRadius: "24px",
+                    background: (theme) =>
+                      theme.palette.mode === "light" ? "#ffffff" : "#1e1e1e",
+                    border: "1px solid",
+                    borderColor: (theme) =>
                       theme.palette.mode === "light"
-                        ? "0 20px 40px -15px rgba(0,0,0,0.1)"
-                        : "0 20px 40px -15px rgba(0,0,0,0.4)",
-                    borderColor: "primary.main",
-                  },
-                }}
-              >
-                <CardContent sx={{ p: 3 }}>
-                  <Stack direction="row" spacing={2.5} alignItems="center">
-                    <Avatar
-                      variant="rounded"
-                      src={product.image}
-                      sx={{
-                        width: 64,
-                        height: 64,
-                        borderRadius: "16px",
-                        boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
-                      }}
-                    />
-                    <Box sx={{ flexGrow: 1 }}>
-                      <Typography
-                        variant="subtitle1"
-                        fontWeight="800"
-                        sx={{ mb: 0.5 }}
+                        ? "rgba(0,0,0,0.08)"
+                        : "rgba(255,255,255,0.08)",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      transform: "translateY(-5px)",
+                      boxShadow: (theme) =>
+                        theme.palette.mode === "light"
+                          ? "0 20px 40px -15px rgba(0,0,0,0.1)"
+                          : "0 20px 40px -15px rgba(0,0,0,0.4)",
+                      borderColor: "primary.main",
+                    },
+                  }}
+                >
+                  <CardContent sx={{ p: 3 }}>
+                    <Stack direction="row" spacing={2.5} alignItems="center">
+                      <Avatar
+                        variant="rounded"
+                        src={product.image}
+                        sx={{
+                          width: 64,
+                          height: 64,
+                          borderRadius: "16px",
+                          boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
+                        }}
                       >
-                        {product.name}
-                      </Typography>
-                      <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        alignItems="center"
-                      >
+                        {product.name?.charAt(0)}
+                      </Avatar>
+                      <Box sx={{ flexGrow: 1 }}>
+                        <Typography
+                          variant="subtitle1"
+                          fontWeight="800"
+                          sx={{ mb: 0.5 }}
+                        >
+                          {product.name}
+                        </Typography>
                         <Typography
                           variant="caption"
                           sx={{
@@ -253,38 +237,17 @@ export default function ProductsHeader({
                             borderRadius: "6px",
                           }}
                         >
-                          {product.sales} sales
+                          {product.sales} ventes
                         </Typography>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            color: "success.main",
-                            bgcolor: (theme) =>
-                              theme.palette.mode === "light"
-                                ? "rgba(0, 178, 48, 0.1)"
-                                : "rgba(0, 178, 48, 0.2)",
-                            px: 1,
-                            py: 0.5,
-                            borderRadius: "8px",
-                          }}
-                        >
-                          <TrendingUpIcon
-                            sx={{ fontSize: "0.9rem", mr: 0.5 }}
-                          />
-                          <Typography variant="caption" fontWeight="900">
-                            {product.growth}
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      </Box>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      )}
 
       <Grid container spacing={2} sx={{ mt: 4 }}>
         <Grid size={{ xs: 12, md: 3 }}>

@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
@@ -13,12 +13,16 @@ import {
   TextField,
   Grid,
   MenuItem,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import {
   ArrowBack as BackIcon,
   Save as SaveIcon,
   LocalShipping as DeliveryIcon,
 } from "@mui/icons-material";
+import axiosInstance from "@/lib/axios";
+import { useDeliveryPersonnel } from "@/hooks/useDeliveries";
 
 export default function DeliveryEditPage({
   params,
@@ -30,16 +34,100 @@ export default function DeliveryEditPage({
   const { id } = resolvedParams;
   const decodedId = decodeURIComponent(id);
 
+  const { personnel, loading: personnelLoading } = useDeliveryPersonnel();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    status: "In Progress",
-    courier: "John Doe",
-    notes: "Handle with care. Fragile items.",
+    status: "",
+    courier: "",
+    notes: "",
   });
 
-  const handleSave = () => {
-    console.log("Saving delivery:", formData);
-    router.push(`/deliveries/${encodeURIComponent(decodedId)}`);
+  useEffect(() => {
+    const fetchDelivery = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Try fetching from orders endpoint first
+        try {
+          const orderResponse = await axiosInstance.get(`orders/${decodedId}`);
+          if (orderResponse.data?.order) {
+            const order = orderResponse.data.order;
+            setFormData({
+              status: order.status || "Pending",
+              courier: order.deliveryPerson?.id?.toString() || order.deliveryPerson?.name || "",
+              notes: order.notes || "",
+            });
+            setLoading(false);
+            return;
+          }
+        } catch (orderErr) {
+          // If order fetch fails, try delivery/active endpoint
+          const deliveryResponse = await axiosInstance.get("delivery/active");
+          const allDeliveries = deliveryResponse.data?.deliveries || deliveryResponse.data?.data || [];
+          const found = allDeliveries.find(
+            (d: any) => d.id?.toString() === decodedId || d.orderId?.toString() === decodedId
+          );
+          if (found) {
+            setFormData({
+              status: found.status || "Pending",
+              courier: found.deliveryPerson?.id?.toString() || found.deliveryPerson?.name || found.courier || "",
+              notes: found.notes || "",
+            });
+          } else {
+            setError("Delivery not found");
+          }
+        }
+      } catch (err: any) {
+        console.error("Error fetching delivery:", err);
+        setError(err?.response?.data?.message || "Failed to load delivery details");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDelivery();
+  }, [decodedId]);
+
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      // Update delivery assignment
+      if (formData.courier) {
+        await axiosInstance.post(`delivery/assign/${decodedId}`, {
+          delivery_person_id: formData.courier,
+        });
+      }
+      router.push(`/deliveries/${encodeURIComponent(decodedId)}`);
+    } catch (err: any) {
+      console.error("Error saving delivery:", err);
+      setError(err?.response?.data?.message || "Failed to save delivery");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (loading && !formData.status) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "50vh" }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error && !formData.status) {
+    return (
+      <Box sx={{ p: { xs: 2, md: 3 } }}>
+        <Alert severity="error" sx={{ borderRadius: 3 }}>
+          {error}
+        </Alert>
+        <Button variant="contained" onClick={() => router.push("/deliveries")} sx={{ mt: 2 }}>
+          Back to Deliveries
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -60,13 +148,14 @@ export default function DeliveryEditPage({
         <Box sx={{ flexGrow: 1 }}>
           <Typography
             variant="h4"
-            fontWeight="900"
+            fontWeight="bold"
             sx={{
               background: (theme) =>
-                `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+                theme.palette.mode === "light"
+                  ? "linear-gradient(135deg, #2D3FEA 0%, #9F2DFB 100%)"
+                  : "linear-gradient(135deg, #8A94FF 0%, #D88AFF 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
-              letterSpacing: -0.5,
             }}
           >
             Modify Delivery
@@ -139,12 +228,20 @@ export default function DeliveryEditPage({
                   onChange={(e) =>
                     setFormData({ ...formData, courier: e.target.value })
                   }
+                  disabled={personnelLoading}
                   sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
                 >
-                  <MenuItem value="John Doe">John Doe</MenuItem>
-                  <MenuItem value="Jane Smith">Jane Smith</MenuItem>
-                  <MenuItem value="Mike Tyson">Mike Tyson</MenuItem>
-                  <MenuItem value="Sarah Connor">Sarah Connor</MenuItem>
+                  {personnelLoading ? (
+                    <MenuItem disabled>Loading couriers...</MenuItem>
+                  ) : personnel.length === 0 ? (
+                    <MenuItem disabled>No couriers available</MenuItem>
+                  ) : (
+                    personnel.map((person) => (
+                      <MenuItem key={person.id} value={person.id.toString()}>
+                        {person.name}
+                      </MenuItem>
+                    ))
+                  )}
                 </TextField>
               </Stack>
             </CardContent>

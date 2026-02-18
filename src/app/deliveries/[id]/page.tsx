@@ -1,7 +1,7 @@
 "use client";
 
-import { use } from "react";
-import { useRouter } from "next/navigation";
+import { use, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Box,
   Typography,
@@ -14,6 +14,8 @@ import {
   Divider,
   Breadcrumbs,
   Grid,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import Link from "next/link";
 import {
@@ -29,20 +31,21 @@ import {
 } from "@mui/icons-material";
 import { LinksEnum } from "@/utilities/pagesLinksEnum";
 import TrackingMap from "@/components/deliveries/TrackingMap";
+import axiosInstance from "@/lib/axios";
+import { useActiveDeliveries } from "@/hooks/useDeliveries";
 
-import { useSearchParams } from "next/navigation";
-import { useEffect } from "react";
-
-const deliveries = [
-  {
-    id: "#DEL-4412",
-    orderId: "#ORD-9921",
-    courier: "John Doe",
-    status: "In Progress",
-    timeWindow: "2:00 PM - 4:00 PM",
-    address: "123 Main St, New York, NY",
-  },
-];
+interface DeliveryData {
+  id: number | string;
+  orderId?: string | number;
+  trackingCode?: string;
+  courier?: string;
+  deliveryPerson?: { name: string };
+  status: string;
+  timeWindow?: string;
+  address?: string;
+  shippingAddress?: string;
+  customer?: string;
+}
 
 export default function DeliveryDetailPage({
   params,
@@ -55,29 +58,121 @@ export default function DeliveryDetailPage({
   const { id } = resolvedParams;
   const decodedId = decodeURIComponent(id);
 
+  const [delivery, setDelivery] = useState<DeliveryData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { deliveries } = useActiveDeliveries();
+
   useEffect(() => {
     if (searchParams.get("print") === "true") {
       window.print();
     }
   }, [searchParams]);
 
-  // Mock finding delivery by ID
-  const delivery = deliveries.find((d) => d.id === decodedId) || deliveries[0];
+  useEffect(() => {
+    const fetchDelivery = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Try to find delivery from active deliveries list first
+        const foundDelivery = deliveries.find(
+          (d) => d.id?.toString() === decodedId || d.orderId?.toString() === decodedId
+        );
+
+        if (foundDelivery) {
+          setDelivery({
+            id: foundDelivery.id,
+            orderId: foundDelivery.orderId,
+            courier: foundDelivery.courier || "--",
+            status: foundDelivery.status || "Pending",
+            address: foundDelivery.address || "--",
+            customer: foundDelivery.customer || "--",
+          });
+          setLoading(false);
+          return;
+        }
+
+        // If not found, try fetching from orders endpoint
+        try {
+          const orderResponse = await axiosInstance.get(`orders/${decodedId}`);
+          if (orderResponse.data?.order) {
+            const order = orderResponse.data.order;
+            setDelivery({
+              id: order.id,
+              orderId: order.trackingCode || order.id,
+              courier: order.deliveryPerson?.name || "--",
+              status: order.status || "Pending",
+              address: order.shippingAddress
+                ? `${order.shippingAddress.street || ""}, ${order.shippingAddress.city || ""}`.trim()
+                : "--",
+              customer: order.customer || "--",
+            });
+          } else {
+            setError("Delivery not found");
+          }
+        } catch (orderErr) {
+          // If order fetch fails, try delivery/active endpoint
+          const deliveryResponse = await axiosInstance.get("delivery/active");
+          const allDeliveries = deliveryResponse.data?.deliveries || deliveryResponse.data?.data || [];
+          const found = allDeliveries.find(
+            (d: any) => d.id?.toString() === decodedId || d.orderId?.toString() === decodedId
+          );
+          if (found) {
+            setDelivery({
+              id: found.id,
+              orderId: found.orderId || found.trackingCode,
+              courier: found.courier || found.deliveryPerson?.name || "--",
+              status: found.status || "Pending",
+              address: found.address || found.shippingAddress || "--",
+              customer: found.customer || "--",
+            });
+          } else {
+            setError("Delivery not found");
+          }
+        }
+      } catch (err: any) {
+        console.error("Error fetching delivery:", err);
+        setError(err?.response?.data?.message || "Failed to load delivery details");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (deliveries.length > 0 || decodedId) {
+      fetchDelivery();
+    }
+  }, [decodedId, deliveries]);
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Delivered":
-        return "success";
-      case "In Transit":
-        return "info";
-      case "Pending":
-        return "warning";
-      case "Cancelled":
-        return "error";
-      default:
-        return "default";
-    }
+    const s = status?.toLowerCase() || "";
+    if (s === "delivered" || s === "livré" || s === "completed") return "success";
+    if (s === "in transit" || s === "en transit" || s === "in_transit" || s === "out_for_delivery") return "info";
+    if (s === "pending" || s === "en attente" || s === "in progress") return "warning";
+    if (s === "cancelled" || s === "annulé") return "error";
+    return "default";
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ p: { xs: 2, md: 3 }, display: "flex", justifyContent: "center", alignItems: "center", minHeight: "50vh" }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error || !delivery) {
+    return (
+      <Box sx={{ p: { xs: 2, md: 3 } }}>
+        <Alert severity="error" sx={{ borderRadius: 3 }}>
+          {error || "Delivery not found"}
+        </Alert>
+        <Button variant="contained" onClick={() => router.push("/deliveries")} sx={{ mt: 2 }}>
+          Back to Deliveries
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
@@ -155,7 +250,9 @@ export default function DeliveryDetailPage({
               fontWeight="900"
               sx={{
                 background: (theme) =>
-                  `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+                  theme.palette.mode === "light"
+                    ? "linear-gradient(135deg, #2D3FEA 0%, #9F2DFB 100%)"
+                    : "linear-gradient(135deg, #8A94FF 0%, #D88AFF 100%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 letterSpacing: -0.5,
@@ -244,7 +341,7 @@ export default function DeliveryDetailPage({
                       Delivery ID
                     </Typography>
                     <Typography variant="body2" fontWeight="800">
-                      {delivery.id}
+                      {delivery.id?.toString().startsWith("#") ? delivery.id : `#${delivery.id}`}
                     </Typography>
                   </Stack>
                   <Stack direction="row" justifyContent="space-between">
@@ -281,7 +378,7 @@ export default function DeliveryDetailPage({
                         Destination
                       </Typography>
                       <Typography variant="body2" fontWeight="700">
-                        {delivery.address}
+                        {delivery.address || "--"}
                       </Typography>
                     </Box>
                   </Stack>
@@ -320,7 +417,7 @@ export default function DeliveryDetailPage({
                   color="primary.main"
                   sx={{ letterSpacing: -0.5 }}
                 >
-                  {delivery.orderId}
+                  {delivery.orderId?.toString().startsWith("#") ? delivery.orderId : `#${delivery.orderId}`}
                 </Typography>
                 <Button
                   fullWidth
@@ -337,7 +434,7 @@ export default function DeliveryDetailPage({
                   }}
                   onClick={() =>
                     router.push(
-                      `/orders/${encodeURIComponent(delivery.orderId)}`
+                      `/orders/${encodeURIComponent(delivery.orderId || delivery.id)}`
                     )
                   }
                 >
@@ -411,7 +508,7 @@ export default function DeliveryDetailPage({
                         Assigned Courier
                       </Typography>
                       <Typography variant="body1" fontWeight="800">
-                        {delivery.courier}
+                        {delivery.courier || "--"}
                       </Typography>
                       <Button
                         size="small"
@@ -468,7 +565,7 @@ export default function DeliveryDetailPage({
                         Time Window
                       </Typography>
                       <Typography variant="body1" fontWeight="800">
-                        {delivery.timeWindow}
+                        {delivery.timeWindow || "--"}
                       </Typography>
                       <Typography
                         variant="caption"

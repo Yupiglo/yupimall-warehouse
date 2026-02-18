@@ -12,34 +12,26 @@ import {
   Typography,
   IconButton,
   Box,
+  CircularProgress,
 } from "@mui/material";
 import {
   Close as CloseIcon,
   LocalShipping as ShippingIcon,
 } from "@mui/icons-material";
 import { useState } from "react";
+import { useOrders } from "@/hooks/useOrders";
+import { useDeliveryPersonnel } from "@/hooks/useDeliveries";
+import axiosInstance from "@/lib/axios";
 
 interface AddDeliveryModalProps {
   open: boolean;
   onClose: () => void;
 }
 
-const mockOrders = [
-  { id: "#ORD-9921", customer: "Alice Johnson" },
-  { id: "#ORD-9920", customer: "Mark Spencer" },
-  { id: "#ORD-9919", customer: "Elena Gomez" },
-];
-
-const mockCouriers = [
-  { id: 1, name: "John Doe" },
-  { id: 2, name: "Jane Smith" },
-  { id: 3, name: "Mike Tyson" },
-];
-
-export default function AddDeliveryModal({
-  open,
-  onClose,
-}: AddDeliveryModalProps) {
+export default function AddDeliveryModal({ open, onClose }: AddDeliveryModalProps) {
+  const { orders, loading: ordersLoading } = useOrders();
+  const { personnel, loading: couriersLoading } = useDeliveryPersonnel();
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     orderId: "",
     courierId: "",
@@ -47,11 +39,26 @@ export default function AddDeliveryModal({
     notes: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Nueva entrega:", formData);
-    onClose();
+    try {
+      setSubmitting(true);
+      await axiosInstance.post(`delivery/assign/${formData.orderId}`, {
+        delivery_person_id: formData.courierId,
+        address: formData.address,
+        notes: formData.notes,
+      });
+      onClose();
+    } catch (err) {
+      console.error("Erreur lors de la création:", err);
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  const pendingOrders = (orders || []).filter(
+    (o: any) => o.status === "pending" || o.status === "validated" || o.status === "en attente"
+  );
 
   return (
     <Dialog
@@ -95,14 +102,10 @@ export default function AddDeliveryModal({
           </Box>
           <Box>
             <Typography variant="h6" fontWeight="900">
-              Assign New Delivery
+              Nouvelle Livraison
             </Typography>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              fontWeight="700"
-            >
-              Dispatch logistics for an order
+            <Typography variant="caption" color="text.secondary" fontWeight="700">
+              Assigner un livreur à une commande
             </Typography>
           </Box>
         </Stack>
@@ -126,73 +129,57 @@ export default function AddDeliveryModal({
           <Stack spacing={2.5}>
             <TextField
               select
-              label="Select Order"
+              label="Sélectionner une commande"
               required
               fullWidth
               value={formData.orderId}
-              onChange={(e) =>
-                setFormData({ ...formData, orderId: e.target.value })
-              }
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "14px",
-                  bgcolor: (theme) =>
-                    theme.palette.mode === "light"
-                      ? "white"
-                      : "rgba(255,255,255,0.03)",
-                },
-              }}
+              onChange={(e) => setFormData({ ...formData, orderId: e.target.value })}
+              disabled={ordersLoading}
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px" } }}
             >
-              {mockOrders.map((order) => (
-                <MenuItem key={order.id} value={order.id}>
-                  {order.id} - {order.customer}
-                </MenuItem>
-              ))}
+              {ordersLoading ? (
+                <MenuItem disabled><CircularProgress size={16} sx={{ mr: 1 }} /> Chargement...</MenuItem>
+              ) : pendingOrders.length > 0 ? (
+                pendingOrders.map((order: any) => (
+                  <MenuItem key={order.id} value={order.id}>
+                    #{order.trackingCode || order.id} — {order.customer || order.user_name || "Client"}
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem disabled>Aucune commande en attente</MenuItem>
+              )}
             </TextField>
 
             <TextField
               select
-              label="Assign Courier"
+              label="Assigner un livreur"
               required
               fullWidth
               value={formData.courierId}
-              onChange={(e) =>
-                setFormData({ ...formData, courierId: e.target.value })
-              }
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "14px",
-                  bgcolor: (theme) =>
-                    theme.palette.mode === "light"
-                      ? "white"
-                      : "rgba(255,255,255,0.03)",
-                },
-              }}
+              onChange={(e) => setFormData({ ...formData, courierId: e.target.value })}
+              disabled={couriersLoading}
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px" } }}
             >
-              {mockCouriers.map((courier) => (
-                <MenuItem key={courier.id} value={courier.id}>
-                  {courier.name}
-                </MenuItem>
-              ))}
+              {couriersLoading ? (
+                <MenuItem disabled><CircularProgress size={16} sx={{ mr: 1 }} /> Chargement...</MenuItem>
+              ) : personnel.length > 0 ? (
+                personnel.map((courier) => (
+                  <MenuItem key={courier.id} value={courier.id}>
+                    {courier.name}
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem disabled>Aucun livreur disponible</MenuItem>
+              )}
             </TextField>
 
             <TextField
-              label="Delivery Address"
+              label="Adresse de livraison"
               required
               fullWidth
               value={formData.address}
-              onChange={(e) =>
-                setFormData({ ...formData, address: e.target.value })
-              }
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "14px",
-                  bgcolor: (theme) =>
-                    theme.palette.mode === "light"
-                      ? "white"
-                      : "rgba(255,255,255,0.03)",
-                },
-              }}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px" } }}
             />
 
             <TextField
@@ -201,18 +188,8 @@ export default function AddDeliveryModal({
               rows={3}
               fullWidth
               value={formData.notes}
-              onChange={(e) =>
-                setFormData({ ...formData, notes: e.target.value })
-              }
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "16px",
-                  bgcolor: (theme) =>
-                    theme.palette.mode === "light"
-                      ? "white"
-                      : "rgba(255,255,255,0.03)",
-                },
-              }}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px" } }}
             />
           </Stack>
         </DialogContent>
@@ -225,31 +202,30 @@ export default function AddDeliveryModal({
               fontWeight: "900",
               borderRadius: "12px",
               px: 3,
-              py: 1.2,
+              py: 1.5,
               color: "text.secondary",
             }}
           >
-            Cancel
+            Annuler
           </Button>
           <Button
             type="submit"
             variant="contained"
+            disabled={submitting}
             sx={{
               textTransform: "none",
               fontWeight: "900",
               borderRadius: "12px",
               px: 4,
-              py: 1.2,
-              boxShadow: (theme) =>
-                `0 8px 16px -4px ${theme.palette.primary.main}40`,
+              py: 1.5,
+              boxShadow: (theme) => `0 8px 16px -4px ${theme.palette.primary.main}40`,
               "&:hover": {
                 transform: "translateY(-1px)",
-                boxShadow: (theme) =>
-                  `0 12px 20px -4px ${theme.palette.primary.main}60`,
+                boxShadow: (theme) => `0 12px 20px -4px ${theme.palette.primary.main}60`,
               },
             }}
           >
-            Create Delivery
+            {submitting ? <CircularProgress size={20} /> : "Créer la livraison"}
           </Button>
         </DialogActions>
       </form>

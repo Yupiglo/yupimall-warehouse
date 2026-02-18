@@ -12,18 +12,51 @@ import {
   Box,
   Stack,
   Tooltip,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import {
   Visibility as ViewIcon,
   Print as PrintIcon,
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
+import { useStockEntries } from "@/hooks/useStock";
 
-import { mockEntries } from "@/data/mocks/entries";
-import { Entry } from "@/types";
+interface StockEntry {
+  id: number;
+  reference?: string;
+  product?: {
+    title?: string;
+    sku?: string;
+  };
+  quantity: number;
+  supplier?: string;
+  created_at?: string;
+}
 
 export default function EntriesTable() {
   const router = useRouter();
+  const { entries, loading, error } = useStockEntries();
+
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return <Alert severity="error" sx={{ borderRadius: 3 }}>{error}</Alert>;
+  }
+
+  if (entries.length === 0) {
+    return (
+      <Box sx={{ textAlign: "center", py: 6 }}>
+        <Typography color="text.secondary">Aucune entrée de stock</Typography>
+      </Box>
+    );
+  }
 
   return (
     <TableContainer
@@ -126,7 +159,7 @@ export default function EntriesTable() {
           </TableRow>
         </TableHead>
         <TableBody>
-          {mockEntries.map((entry: Entry) => (
+          {entries.map((entry) => (
             <TableRow
               key={entry.id}
               onClick={() =>

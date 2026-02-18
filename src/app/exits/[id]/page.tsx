@@ -1,7 +1,7 @@
 "use client";
 
-import { use } from "react";
-import { useRouter } from "next/navigation";
+import { use, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Box,
   Typography,
@@ -14,6 +14,8 @@ import {
   Divider,
   Grid,
   Breadcrumbs,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import {
   ArrowBack as BackIcon,
@@ -28,21 +30,19 @@ import {
 } from "@mui/icons-material";
 import Link from "next/link";
 import { LinksEnum } from "@/utilities/pagesLinksEnum";
+import axiosInstance from "@/lib/axios";
 
-import { useSearchParams } from "next/navigation";
-import { useEffect } from "react";
-
-const exits = [
-  {
-    id: "#EXT-001",
-    product: "Classic Leather Jacket",
-    sku: "JKT-001",
-    quantity: 12,
-    destination: "John Doe (Downtown)",
-    date: "Oct 26, 2025, 11:45 AM",
-    notes: "Direct delivery to customer.",
-  },
-];
+interface ExitData {
+  id: number | string;
+  product?: string;
+  product_name?: string;
+  sku?: string;
+  quantity: number;
+  destination?: string;
+  date?: string;
+  created_at?: string;
+  notes?: string;
+}
 
 export default function ExitDetailPage({
   params,
@@ -55,13 +55,111 @@ export default function ExitDetailPage({
   const { id } = resolvedParams;
   const decodedId = decodeURIComponent(id);
 
+  const [exit, setExit] = useState<ExitData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     if (searchParams.get("print") === "true") {
       window.print();
     }
   }, [searchParams]);
 
-  const exit = exits.find((e) => e.id === decodedId) || exits[0];
+  useEffect(() => {
+    const fetchExit = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Try fetching individual exit by ID
+        try {
+          const response = await axiosInstance.get(`stock/exits/${decodedId}`);
+          if (response.data?.exit || response.data?.data) {
+            const exitData = response.data.exit || response.data.data;
+            setExit({
+              id: exitData.id,
+              product: exitData.product_name || exitData.product || "--",
+              sku: exitData.sku || "--",
+              quantity: exitData.quantity || 0,
+              destination: exitData.destination || "--",
+              date: exitData.created_at || exitData.date || "--",
+              notes: exitData.notes || "",
+            });
+            setLoading(false);
+            return;
+          }
+        } catch (individualErr) {
+          // If individual fetch fails, try fetching all exits and finding the one
+          const allExitsResponse = await axiosInstance.get("stock/exits");
+          const allExits = allExitsResponse.data?.exits?.data || 
+                          allExitsResponse.data?.exits || 
+                          allExitsResponse.data?.data || 
+                          [];
+          const found = allExits.find(
+            (e: any) => e.id?.toString() === decodedId
+          );
+          if (found) {
+            setExit({
+              id: found.id,
+              product: found.product_name || found.product || "--",
+              sku: found.sku || "--",
+              quantity: found.quantity || 0,
+              destination: found.destination || "--",
+              date: found.created_at || found.date || "--",
+              notes: found.notes || "",
+            });
+          } else {
+            setError("Exit not found");
+          }
+        }
+      } catch (err: any) {
+        console.error("Error fetching exit:", err);
+        setError(err?.response?.data?.message || "Failed to load exit details");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchExit();
+  }, [decodedId]);
+
+  if (loading) {
+    return (
+      <Box sx={{ p: { xs: 2, md: 3 }, display: "flex", justifyContent: "center", alignItems: "center", minHeight: "50vh" }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error || !exit) {
+    return (
+      <Box sx={{ p: { xs: 2, md: 3 } }}>
+        <Alert severity="error" sx={{ borderRadius: 3 }}>
+          {error || "Exit not found"}
+        </Alert>
+        <Button variant="contained" onClick={() => router.push("/exits")} sx={{ mt: 2 }}>
+          Back to Exits
+        </Button>
+      </Box>
+    );
+  }
+
+  // Format date
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "--";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return dateString;
+    }
+  };
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
@@ -263,7 +361,7 @@ export default function ExitDetailPage({
                       fontWeight="800"
                       sx={{ fontFamily: "monospace", letterSpacing: 0.5 }}
                     >
-                      {exit.id}
+                      {exit.id?.toString().startsWith("#") ? exit.id : `#${exit.id}`}
                     </Typography>
                   </Stack>
                   <Divider sx={{ borderStyle: "dashed" }} />
@@ -296,7 +394,7 @@ export default function ExitDetailPage({
                         Destination
                       </Typography>
                       <Typography variant="body1" fontWeight="800">
-                        {exit.destination}
+                        {exit.destination || "--"}
                       </Typography>
                     </Box>
                   </Stack>
@@ -340,20 +438,22 @@ export default function ExitDetailPage({
                   </Typography>
                 </Stack>
                 <Typography variant="h5" fontWeight="900" gutterBottom>
-                  {exit.product}
+                  {exit.product || "--"}
                 </Typography>
-                <Chip
-                  label={`SKU: ${exit.sku}`}
-                  size="small"
-                  sx={{
-                    borderRadius: "8px",
-                    bgcolor: "background.paper",
-                    border: "1px solid",
-                    borderColor: "divider",
-                    fontWeight: "600",
-                    mb: 3,
-                  }}
-                />
+                {exit.sku && (
+                  <Chip
+                    label={`SKU: ${exit.sku}`}
+                    size="small"
+                    sx={{
+                      borderRadius: "8px",
+                      bgcolor: "background.paper",
+                      border: "1px solid",
+                      borderColor: "divider",
+                      fontWeight: "600",
+                      mb: 3,
+                    }}
+                  />
+                )}
                 <Stack
                   direction="row"
                   sx={{
@@ -441,7 +541,7 @@ export default function ExitDetailPage({
                       <DateIcon fontSize="small" />
                     </Box>
                     <Typography variant="body1" fontWeight="700">
-                      {exit.date}
+                      {formatDate(exit.date)}
                     </Typography>
                   </Stack>
                 </Box>
@@ -470,7 +570,7 @@ export default function ExitDetailPage({
                       color="text.secondary"
                       sx={{ fontStyle: "italic" }}
                     >
-                      "{exit.notes}"
+                      {exit.notes ? `"${exit.notes}"` : "No notes available"}
                     </Typography>
                   </Box>
                 </Box>

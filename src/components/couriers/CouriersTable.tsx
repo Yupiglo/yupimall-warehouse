@@ -15,7 +15,8 @@ import {
   Stack,
   Tooltip,
   Avatar,
-  Switch,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import {
   Visibility as ViewIcon,
@@ -23,64 +24,31 @@ import {
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import React from "react";
-import DefaultAvatar from "@/assets/AvatarBig.png";
-
-const couriers = [
-  {
-    id: "#COU-001",
-    name: "John Doe",
-    email: "john.doe@example.com",
-    phone: "+1 234 567 890",
-    vehicle: "Motorcycle",
-    deliveries: 124,
-    status: "Active",
-  },
-  {
-    id: "#COU-002",
-    name: "Jane Smith",
-    email: "jane.smith@example.com",
-    phone: "+1 234 567 891",
-    vehicle: "Bicycle",
-    deliveries: 85,
-    status: "Active",
-  },
-  {
-    id: "#COU-003",
-    name: "Mike Tyson",
-    email: "mike.t@example.com",
-    phone: "+1 234 567 892",
-    vehicle: "Car",
-    deliveries: 210,
-    status: "On Delivery",
-  },
-  {
-    id: "#COU-004",
-    name: "Sarah Connor",
-    email: "sarah.c@example.com",
-    phone: "+1 234 567 893",
-    vehicle: "Van",
-    deliveries: 45,
-    status: "Offline",
-  },
-];
+import { useDeliveryPersonnel } from "@/hooks/useDeliveries";
 
 export default function CouriersTable() {
   const router = useRouter();
-  // State to manage toggle status locally for demonstration
-  const [courierList, setCourierList] = React.useState(couriers);
+  const { personnel, loading, error } = useDeliveryPersonnel();
 
-  const handleToggleStatus = (id: string) => {
-    setCourierList((prev) =>
-      prev.map((courier) =>
-        courier.id === id
-          ? {
-              ...courier,
-              status: courier.status === "Active" ? "Inactive" : "Active",
-            }
-          : courier
-      )
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+        <CircularProgress />
+      </Box>
     );
-  };
+  }
+
+  if (error) {
+    return <Alert severity="error" sx={{ borderRadius: 3 }}>{error}</Alert>;
+  }
+
+  if (personnel.length === 0) {
+    return (
+      <Box sx={{ textAlign: "center", py: 6 }}>
+        <Typography color="text.secondary">Aucun livreur trouvé</Typography>
+      </Box>
+    );
+  }
 
   return (
     <TableContainer
@@ -102,14 +70,7 @@ export default function CouriersTable() {
       <Table sx={{ minWidth: 650 }}>
         <TableHead>
           <TableRow sx={{ bgcolor: (theme) => theme.palette.action.hover }}>
-            {[
-              "Courier",
-              "Contact Info",
-              "Vehicle",
-              "Total Deliveries",
-              "Active Status",
-              "Actions",
-            ].map((head) => (
+            {["Livreur", "Contact", "Véhicule", "Livraisons", "Statut", "Actions"].map((head) => (
               <TableCell
                 key={head}
                 align={head === "Actions" ? "right" : "left"}
@@ -128,13 +89,11 @@ export default function CouriersTable() {
           </TableRow>
         </TableHead>
         <TableBody>
-          {courierList.map((courier) => (
+          {personnel.map((courier) => (
             <TableRow
               key={courier.id}
               hover
-              onClick={() =>
-                router.push(`/couriers/${encodeURIComponent(courier.id)}`)
-              }
+              onClick={() => router.push(`/couriers/${courier.id}`)}
               sx={{
                 cursor: "pointer",
                 transition: "all 0.2s",
@@ -158,20 +117,15 @@ export default function CouriersTable() {
                       borderRadius: "12px",
                       boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
                     }}
-                    src={DefaultAvatar.src}
                   >
-                    {courier.name.charAt(0)}
+                    {courier.name?.charAt(0).toUpperCase()}
                   </Avatar>
                   <Box>
                     <Typography variant="subtitle2" fontWeight="800">
                       {courier.name}
                     </Typography>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      fontWeight="600"
-                    >
-                      {courier.id}
+                    <Typography variant="caption" color="text.secondary" fontWeight="600">
+                      #{courier.id}
                     </Typography>
                   </Box>
                 </Stack>
@@ -187,72 +141,45 @@ export default function CouriersTable() {
                 </Box>
               </TableCell>
               <TableCell sx={{ fontWeight: "600", color: "text.secondary" }}>
-                {courier.vehicle}
+                {courier.vehicle || "—"}
               </TableCell>
               <TableCell sx={{ fontWeight: "800" }}>
-                {courier.deliveries}
+                {courier.totalDeliveries ?? 0}
               </TableCell>
-              <TableCell onClick={(e) => e.stopPropagation()}>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <Switch
-                    checked={
-                      courier.status === "Active" ||
-                      courier.status === "On Delivery"
-                    } // Treat 'On Delivery' as Active for toggle visually
-                    onChange={() => handleToggleStatus(courier.id)}
-                    size="small"
-                    sx={{
-                      "& .MuiSwitch-switchBase.Mui-checked": {
-                        color: "primary.main",
-                      },
-                      "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track":
-                        {
-                          backgroundColor: "primary.main",
-                        },
-                    }}
-                  />
-                  <Chip
-                    label={courier.status}
-                    size="small"
-                    sx={{
-                      fontWeight: "800",
-                      fontSize: "0.65rem",
-                      borderRadius: "6px",
-                      textTransform: "uppercase",
-                      letterSpacing: 0.5,
-                      bgcolor: (theme) =>
-                        theme.palette.mode === "light"
-                          ? "white"
-                          : "rgba(255,255,255,0.05)",
-                      color:
-                        courier.status === "Active"
-                          ? "success.main"
-                          : courier.status === "Inactive" ||
-                            courier.status === "Offline"
-                          ? "text.disabled"
-                          : "info.main",
-                      border: "1px solid",
-                      borderColor:
-                        courier.status === "Active"
-                          ? "success.main"
-                          : courier.status === "Inactive" ||
-                            courier.status === "Offline"
-                          ? "text.disabled"
-                          : "info.main",
-                    }}
-                  />
-                </Stack>
+              <TableCell>
+                <Chip
+                  label={courier.status}
+                  size="small"
+                  sx={{
+                    fontWeight: "800",
+                    fontSize: "0.65rem",
+                    borderRadius: "6px",
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "light" ? "white" : "rgba(255,255,255,0.05)",
+                    color:
+                      courier.status === "Active" || courier.status === "active"
+                        ? "success.main"
+                        : courier.status === "Inactive" || courier.status === "Offline" || courier.status === "inactive"
+                        ? "text.disabled"
+                        : "info.main",
+                    border: "1px solid",
+                    borderColor:
+                      courier.status === "Active" || courier.status === "active"
+                        ? "success.main"
+                        : courier.status === "Inactive" || courier.status === "Offline" || courier.status === "inactive"
+                        ? "text.disabled"
+                        : "info.main",
+                  }}
+                />
               </TableCell>
               <TableCell align="right" onClick={(e) => e.stopPropagation()}>
                 <Stack direction="row" spacing={1} justifyContent="flex-end">
-                  <Tooltip title="View Profile">
+                  <Tooltip title="Voir le profil">
                     <IconButton
                       size="small"
-                      onClick={() =>
-                        router.push(
-                          `/couriers/${encodeURIComponent(courier.id)}`
-                        )
-                      }
+                      onClick={() => router.push(`/couriers/${courier.id}`)}
                       sx={{
                         borderRadius: "8px",
                         color: "primary.main",
@@ -263,14 +190,10 @@ export default function CouriersTable() {
                       <ViewIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title="Edit Info">
+                  <Tooltip title="Modifier">
                     <IconButton
                       size="small"
-                      onClick={() =>
-                        router.push(
-                          `/couriers/${encodeURIComponent(courier.id)}/edit`
-                        )
-                      }
+                      onClick={() => router.push(`/couriers/${courier.id}/edit`)}
                       sx={{
                         borderRadius: "8px",
                         color: "info.main",

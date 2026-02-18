@@ -20,17 +20,19 @@ import {
   ShoppingCart as CartIcon,
 } from "@mui/icons-material";
 import { useColorMode } from "./ThemeRegistry/ColorModeContext";
-import AvatarImg from "@/assets/Avatar.png";
 import NotificationsMenu from "@/components/NotificationsMenu";
 import CartDrawer from "@/components/CartDrawer";
 import CurrencySelector from "@/components/CurrencySelector";
 import { useCart } from "@/hooks/useCart";
+import { useSession } from "next-auth/react";
 
 type HeaderProps = {
   onMenuClick: () => void;
 };
 
 export default function Header({ onMenuClick }: HeaderProps) {
+  const { data: session } = useSession();
+  const user = session?.user;
   const theme = useTheme();
   const colorMode = useColorMode();
   const { cartItemCount } = useCart();
@@ -163,9 +165,13 @@ export default function Header({ onMenuClick }: HeaderProps) {
                   border: "2px solid",
                   borderColor: "primary.lighter",
                   boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
+                  bgcolor: "primary.main",
+                  fontWeight: "bold",
                 }}
-                src={AvatarImg.src}
-              />
+                src={user?.image || undefined}
+              >
+                {user?.name?.charAt(0).toUpperCase()}
+              </Avatar>
               <Box sx={{ display: { xs: "none", sm: "block" } }}>
                 <Typography
                   variant="subtitle2"
@@ -173,7 +179,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
                   fontWeight="900"
                   sx={{ lineHeight: 1.2 }}
                 >
-                  John Doe
+                  {user?.name || "Utilisateur"}
                 </Typography>
                 <Typography
                   variant="caption"
@@ -185,7 +191,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
                     letterSpacing: 0.5,
                   }}
                 >
-                  Warehouse Admin
+                  {(user as any)?.role || "Warehouse Admin"}
                 </Typography>
               </Box>
             </Stack>

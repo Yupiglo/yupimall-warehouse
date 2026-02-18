@@ -12,18 +12,48 @@ import {
   Box,
   Stack,
   Tooltip,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import {
   Visibility as ViewIcon,
   Print as PrintIcon,
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
-
-import { mockExits } from "@/data/mocks/exits";
-import { Exit } from "@/types";
+import { useStockExits } from "@/hooks/useStock";
 
 export default function ExitsTable() {
   const router = useRouter();
+  const { exits, loading, error } = useStockExits();
+
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return <Alert severity="error" sx={{ borderRadius: 3 }}>{error}</Alert>;
+  }
+
+  if (exits.length === 0) {
+    return (
+      <Box sx={{ textAlign: "center", py: 6 }}>
+        <Typography color="text.secondary">Aucune sortie de stock</Typography>
+      </Box>
+    );
+  }
+
+  const headCellSx = {
+    fontWeight: "800",
+    textTransform: "uppercase" as const,
+    fontSize: "0.75rem",
+    letterSpacing: 1,
+    color: "text.secondary",
+    py: 2.5,
+  };
 
   return (
     <TableContainer
@@ -50,88 +80,19 @@ export default function ExitsTable() {
                   : "rgba(255, 255, 255, 0.02)",
             }}
           >
-            <TableCell
-              sx={{
-                fontWeight: "800",
-                textTransform: "uppercase",
-                fontSize: "0.75rem",
-                letterSpacing: 1,
-                color: "text.secondary",
-                py: 2.5,
-              }}
-            >
-              Exit ID
-            </TableCell>
-            <TableCell
-              sx={{
-                fontWeight: "800",
-                textTransform: "uppercase",
-                fontSize: "0.75rem",
-                letterSpacing: 1,
-                color: "text.secondary",
-                py: 2.5,
-              }}
-            >
-              Product
-            </TableCell>
-            <TableCell
-              sx={{
-                fontWeight: "800",
-                textTransform: "uppercase",
-                fontSize: "0.75rem",
-                letterSpacing: 1,
-                color: "text.secondary",
-                py: 2.5,
-              }}
-            >
-              Quantity
-            </TableCell>
-            <TableCell
-              sx={{
-                fontWeight: "800",
-                textTransform: "uppercase",
-                fontSize: "0.75rem",
-                letterSpacing: 1,
-                color: "text.secondary",
-                py: 2.5,
-              }}
-            >
-              Destination
-            </TableCell>
-            <TableCell
-              sx={{
-                fontWeight: "800",
-                textTransform: "uppercase",
-                fontSize: "0.75rem",
-                letterSpacing: 1,
-                color: "text.secondary",
-                py: 2.5,
-              }}
-            >
-              Date
-            </TableCell>
-            <TableCell
-              align="right"
-              sx={{
-                fontWeight: "800",
-                textTransform: "uppercase",
-                fontSize: "0.75rem",
-                letterSpacing: 1,
-                color: "text.secondary",
-                py: 2.5,
-              }}
-            >
-              Actions
-            </TableCell>
+            <TableCell sx={headCellSx}>ID</TableCell>
+            <TableCell sx={headCellSx}>Produit</TableCell>
+            <TableCell sx={headCellSx}>Quantité</TableCell>
+            <TableCell sx={headCellSx}>Destination</TableCell>
+            <TableCell sx={headCellSx}>Date</TableCell>
+            <TableCell align="right" sx={headCellSx}>Actions</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {mockExits.map((exit: Exit) => (
+          {exits.map((exit) => (
             <TableRow
               key={exit.id}
-              onClick={() =>
-                router.push(`/exits/${encodeURIComponent(exit.id)}`)
-              }
+              onClick={() => router.push(`/exits/${exit.id}`)}
               sx={{
                 cursor: "pointer",
                 transition: "all 0.2s",
@@ -144,31 +105,21 @@ export default function ExitsTable() {
               }}
             >
               <TableCell>
-                <Typography
-                  variant="body2"
-                  fontWeight="800"
-                  color="primary.main"
-                >
-                  {exit.id}
+                <Typography variant="body2" fontWeight="800" color="primary.main">
+                  #{exit.id}
                 </Typography>
               </TableCell>
               <TableCell>
                 <Stack direction="row" spacing={1.5} alignItems="center">
                   <Box>
-                    <Typography
-                      variant="body2"
-                      fontWeight="900"
-                      sx={{ mb: 0.2 }}
-                    >
-                      {exit.product}
+                    <Typography variant="body2" fontWeight="900" sx={{ mb: 0.2 }}>
+                      {exit.product_name || exit.product}
                     </Typography>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      fontWeight="700"
-                    >
-                      SKU: {exit.sku}
-                    </Typography>
+                    {exit.sku && (
+                      <Typography variant="caption" color="text.secondary" fontWeight="700">
+                        SKU: {exit.sku}
+                      </Typography>
+                    )}
                   </Box>
                 </Stack>
               </TableCell>
@@ -188,26 +139,20 @@ export default function ExitsTable() {
                 </Box>
               </TableCell>
               <TableCell>
-                <Typography
-                  variant="body2"
-                  fontWeight="600"
-                  color="text.secondary"
-                >
-                  {exit.destination}
+                <Typography variant="body2" fontWeight="600" color="text.secondary">
+                  {exit.destination || exit.reason || "—"}
                 </Typography>
               </TableCell>
               <TableCell>
-                <Typography
-                  variant="caption"
-                  fontWeight="700"
-                  color="text.secondary"
-                >
-                  {exit.date}
+                <Typography variant="caption" fontWeight="700" color="text.secondary">
+                  {exit.created_at
+                    ? new Date(exit.created_at).toLocaleDateString("fr-FR")
+                    : exit.date || "—"}
                 </Typography>
               </TableCell>
               <TableCell align="right">
                 <Stack direction="row" spacing={1} justifyContent="flex-end">
-                  <Tooltip title="View Details">
+                  <Tooltip title="Voir détails">
                     <IconButton
                       size="small"
                       sx={{
@@ -217,13 +162,13 @@ export default function ExitsTable() {
                       }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        router.push(`/exits/${encodeURIComponent(exit.id)}`);
+                        router.push(`/exits/${exit.id}`);
                       }}
                     >
                       <ViewIcon fontSize="inherit" />
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title="Print Waybill">
+                  <Tooltip title="Imprimer">
                     <IconButton
                       size="small"
                       sx={{
@@ -233,9 +178,7 @@ export default function ExitsTable() {
                       }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        router.push(
-                          `/exits/${encodeURIComponent(exit.id)}?print=true`
-                        );
+                        router.push(`/exits/${exit.id}?print=true`);
                       }}
                     >
                       <PrintIcon fontSize="inherit" />
