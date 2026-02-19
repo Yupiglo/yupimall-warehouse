@@ -43,7 +43,9 @@ declare module "next-auth/jwt" {
 
 export async function refreshAccessToken(token: JWT) {
     try {
-        console.log("AUTH_DEBUG: Refreshing token at", `${baseUrl}/api/v1/auth/refresh-token/`);
+        if (process.env.NODE_ENV !== "production") {
+            console.log("AUTH_DEBUG: Refreshing token");
+        }
 
         const response = await fetch(`${baseUrl}/api/v1/auth/refresh-token/`, {
             method: "POST",
@@ -86,7 +88,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             },
             authorize: async (credentials) => {
                 try {
-                    console.log("AUTH_DEBUG: Attempting signin for", credentials?.email, "at", `${baseUrl}/api/v1/auth/signin`);
+                    if (process.env.NODE_ENV !== "production") {
+                        console.log("AUTH_DEBUG: Attempting signin");
+                    }
 
                     const response = await fetch(`${baseUrl}/api/v1/auth/signin`, {
                         method: "POST",
@@ -101,22 +105,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     });
 
                     if (!response.ok) {
-                        console.log("AUTH_DEBUG: Authentication failed - Server returned", response.status);
+                        if (process.env.NODE_ENV !== "production") {
+                            console.log("AUTH_DEBUG: Auth failed - status", response.status);
+                        }
                         return null;
                     }
 
                     const data = await response.json();
-                    console.log("AUTH_DEBUG: Response status:", data.status);
-
                     if (data.status === 200 && data.user.token) {
-                        console.log("AUTH_DEBUG: User role:", data.user.role);
                         // Restriction: Only Warehouse users allowed in this panel
                         if (data.user.role !== 'warehouse') {
-                            console.log("AUTH_DEBUG: Access denied - role mismatch (expected warehouse)");
+                            if (process.env.NODE_ENV !== "production") {
+                                console.log("AUTH_DEBUG: Access denied - role mismatch");
+                            }
                             return null;
                         }
-
-                        console.log("AUTH_DEBUG: Authentication successful for", data.user.username);
 
                         return {
                             id: data.user.id.toString(),
@@ -129,10 +132,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                             country: data.user.country,
                         };
                     }
-                    console.log("AUTH_DEBUG: Authentication failed - Invalid status or missing token");
                     return null;
                 } catch (error: any) {
-                    console.error("AUTH_DEBUG: Authorize error:", error.message);
+                    if (process.env.NODE_ENV !== "production") {
+                        console.error("AUTH_DEBUG: Authorize error:", error.message);
+                    }
                     return null;
                 }
             },
@@ -189,7 +193,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     session: { strategy: "jwt" },
     trustHost: true,
-    secret: process.env.AUTH_SECRET || "default_landing_secret_for_build",
+    secret: (() => {
+        const secret = process.env.AUTH_SECRET;
+        if (process.env.NODE_ENV === "production" && !secret) {
+            throw new Error("AUTH_SECRET is required in production. See docs/SECURITE.md");
+        }
+        return secret || "default_landing_secret_for_build";
+    })(),
 });
 
 

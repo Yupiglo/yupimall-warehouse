@@ -41,7 +41,7 @@ export default function ChangePasswordModal({
 
   const handleSave = () => {
     // Mock save logic
-    console.log("Saving new password:", passwords);
+    // Ne jamais logger les mots de passe
     onClose();
   };
 
